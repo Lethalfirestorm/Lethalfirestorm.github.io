@@ -1,0 +1,1131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ken's Vacation Expense Tracker & Converters</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .sort-buttons {            display: flex;            justify-content: center;            gap: 20px;            margin-bottom: 20px;        }
+        .sort-buttons button {            background-color: #28a745;            color: white;            border: none;            padding: 10px 20px;            font-size: 16px;            border-radius: 6px;            cursor: pointer;        }
+        .sort-buttons button:hover {            background-color: #218838;        }
+        body {            position: relative;            font-family: 'Arial', sans-serif;            margin: 0;            background-color: #f4f4f4;            color: #333;            padding: 0;        }
+        body::before {            content: "";            position: absolute;            top: 0;            left: 0;            width: 100%;            height: 100%;            background-image: url("https://kenmorgan.ca/20240229_181701~2.jpg");            background-size: cover;            background-repeat: no-repeat;            opacity: 0.3;            z-index: -1;        }
+        h1 {            text-align: center;            color: #FF5733;            padding-top: 20px;        }
+        .container {            width: 80%;            margin: 0 auto;            position: relative;            z-index: 1;            background-color: rgba(255, 255, 255, 0.8);            padding: 20px;            border-radius: 10px;            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);        }
+        .tabs {            display: flex;            justify-content: center;            border-bottom: 2px solid #ccc;            margin-bottom: 20px;        }
+        .tab-button {            background-color: transparent;            border: none;            padding: 15px 25px;            cursor: pointer;            font-size: 18px;            color: #555;            position: relative;            top: 2px;            border-bottom: 2px solid transparent;            transition: color 0.3s, border-bottom-color 0.3s;        }
+        .tab-button.active {            color: #FF5733;            border-bottom: 2px solid #FF5733;        }
+        .tab-content {            display: none;        }
+        form {            background-color: #fff;            padding: 15px;            margin: 20px 0;            border-radius: 8px;            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);        }
+        .input-row {            display: flex;            flex-wrap: wrap;            gap: 10px;            align-items: center;        }
+        .input-row label {            width: 120px;            font-weight: bold;            display: inline-block;        }
+        .input-row input,
+        .input-row select {            flex: 1;            padding: 8px;            border-radius: 6px;            border: 1px solid #ddd;            font-size: 14px;            min-width: 150px;        }
+        form button {            background-color: #FF5733;            color: white;            cursor: pointer;            padding: 12px;            font-size: 16px;            border: none;            border-radius: 6px;            width: 100%;            margin-top: 10px;        }
+        form button:hover {            background-color: #C70039;        }
+        table {            width: 100%;            margin-top: 20px;            border-collapse: collapse;            background-color: #fff;            border-radius: 8px;            overflow: hidden;            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);        }
+        th, td {            padding: 10px;            text-align: left;            border-bottom: 1px solid #ddd;            font-size: 0.9em;        }
+        th {            background-color: #FF5733;            color: white;        }
+        td button {            background-color: #dc3545;            color: white;            border: none;            padding: 5px 10px;            cursor: pointer;            border-radius: 4px;            font-size: 0.8em;            margin-right: 5px;        }
+        td button.edit-btn {            background-color: #007AFF;        }
+        td button.edit-btn:hover {            background-color: #0056b3;        }
+        td button:hover {            background-color: #c82333;        }
+        .summary-container,
+        .category-averages-container {            display: flex;            flex-wrap: wrap;            gap: 15px;            margin-bottom: 20px;            justify-content: center;        }
+        .summary-card,
+        .category-average-card {            flex: 1;            min-width: 180px;            max-width: 250px;            padding: 15px;            border-radius: 8px;            text-align: center;            color: white;            font-weight: bold;            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);            display: flex;            flex-direction: column;            justify-content: space-between;        }
+        .summary-card:hover {    transform: translateY(-5px); }
+        .summary-card#totalDistance { background-image: linear-gradient(135deg, #6a11cb, #2575fc); }
+        .summary-card#totalFuelUsed { background-image: linear-gradient(135deg, #ff0084, #ff00cc); }
+        .summary-card#averageMPG { background-image: linear-gradient(135deg, #38f9d7, #43e97b); }
+        .summary-card#grandTotal { background-image: linear-gradient(135deg, #f7971e, #ffd200); }
+        .summary-card#totalHST { background-image: linear-gradient(135deg, #e74c3c, #c0392b); } /* New Style for HST Card */
+        .summary-card#averagePerDay { background-image: linear-gradient(135deg, #08aeea, #2af598); }
+        .summary-card#tripDurationAverage { background-image: linear-gradient(135deg, #fa709a, #fee140); }
+        .category-average-card h4 {            margin-top: 0;            margin-bottom: 8px;            font-size: 1.1em;        }
+        .category-average-card p {            margin: 3px 0;        }
+        .category-average-card .percentage {            font-size: 1.2em;            font-weight: bolder;            margin: 5px 0;        }
+        .category-average-card .total-amount { font-size: 1em; }
+        .category-average-card .avg-amount { font-size: 0.9em; opacity: 0.9; }
+        .category-average-card small { font-size: 0.75em; opacity: 0.8; margin-top: 8px; }
+        .chart-container, .ranking-container {            width: 100%;            max-width: 600px;            margin: 40px auto;            background-color: #fff;            padding: 20px;            border-radius: 8px;            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);        }
+        #rankingList { padding: 0; margin: 0; }
+        .ranking-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 5px; border-bottom: 1px solid #f0f0f0; }
+        .ranking-item:last-child { border-bottom: none; }
+        .ranking-item .rank-info { display: flex; align-items: center; gap: 15px; }
+        .ranking-item .rank-position { font-size: 1em; font-weight: bold; color: #888; min-width: 25px; text-align: right; }
+        .ranking-item .rank-category { font-weight: bold; font-size: 1.1em; color: #333; }
+        .ranking-item .rank-details { text-align: right; }
+        .ranking-item .rank-amount { font-weight: bold; font-size: 1.1em; color: #28a745; }
+        .ranking-item .rank-percentage { font-size: 0.9em; color: #777; display: block; }
+        .date-filters { display: flex; justify-content: center; align-items: center; gap: 15px; margin-bottom: 20px; flex-wrap: wrap; }
+        .date-filter-input { padding: 8px; border-radius: 6px; border: 1px solid #ddd; font-size: 14px; }
+        .filter-action-button { padding: 8px 15px; font-size: 14px; border-radius: 6px; border: 1px solid #aaa; background-color: #f0f0f0; cursor: pointer; transition: background-color 0.2s; }
+        .filter-action-button:hover { background-color: #e0e0e0; }
+        .action-buttons { display: flex; justify-content: center; gap: 15px; margin-top: 20px; margin-bottom: 20px; }
+        .action-buttons button { background-color: #17a2b8; color: white; border: none; padding: 10px 20px; font-size: 16px; border-radius: 6px; cursor: pointer; }
+        .action-buttons button:hover { background-color: #138496; }
+        #reportButton { background-color: #6f42c1; }
+        #reportButton:hover { background-color: #5a349b; }
+        #deleteAllButton { background-color: #dc3545; }#deleteAllButton:hover { background-color: #c82333; }
+        #retainDataDeleteButton { background-color: #fd7e14; }#retainDataDeleteButton:hover { background-color: #e66a00; }
+        #archiveDeleteButton { background-color: #ffc107; color: black; }#archiveDeleteButton:hover { background-color: #e0a800; }
+        .calc-tabs { display: flex; flex-wrap: wrap; border-bottom: 1px solid #ddd; margin-bottom: 20px; }
+        .calc-tab-button { background-color: #f1f1f1; border: 1px solid #ddd; border-bottom: none; cursor: pointer; padding: 10px 15px; font-size: 1em; border-radius: 6px 6px 0 0; margin-right: 5px; margin-bottom: -1px; }
+        .calc-tab-button.active { background-color: #fff; border-bottom: 1px solid white; }
+        .calc-tab-content { display: none; padding: 20px; border: 1px solid #ddd; border-top: none; border-radius: 0 0 8px 8px; background-color: #fff; }
+        .calculator { text-align: left; max-width: 450px; margin: auto; }
+        .calculator h2 { margin-top: 0; color: #333; text-align: center; }
+        .calc-input-group { margin-bottom: 15px; }
+        .calc-input-group label { display: block; margin-bottom: 5px; font-weight: bold; color: #555; }
+        .calc-input-group input, .calc-input-group select { width: 100%; padding: 8px; border-radius: 6px; border: 1px solid #ccc; box-sizing: border-box; font-size: 1em; }
+        .calc-result { margin-top: 20px; padding: 15px; background-color: #e9f5ff; border-radius: 8px; border: 1px solid #b3d7ff; }
+        .calc-result p { margin: 5px 0; font-size: 1.1em; }
+        .calc-result span { font-weight: bold; }
+        #budgetStatus.over-budget { color: #dc3545; }
+        #budgetStatus.under-budget { color: #28a745; }
+        .currency-converter { background: none; color: inherit; border-radius: 0; box-shadow: none; padding: 0; width: 100%; max-width: 450px; margin: 0 auto; text-align: left; }
+        .currency-converter h2 { font-size: 1.5rem; margin-bottom: 15px; color: #333; text-align: center; }
+        .currency-converter label { font-size: 1rem; margin: 5px 0; display: block; color: #555; }
+        .currency-converter input, .currency-converter select { border: 1px solid #ccc; font-size: 1rem; color: #333; }
+        .currency-converter .button { background-color: #007AFF; }
+        .currency-converter .button:hover { background-color: #0056b3; }
+        .currency-converter .result { background-color: #e9f5ff; border: 1px solid #b3d7ff; color: #333; }
+        .currency-converter .result span { color: #007AFF; }
+        .modal-overlay {            position: fixed;            top: 0;            left: 0;            width: 100%;            height: 100%;            background-color: rgba(0,0,0,0.6);            display: flex;            justify-content: center;            align-items: center;            z-index: 1000;        }
+        .modal-content {            background: white;            padding: 25px 30px;            border-radius: 8px;            text-align: center;            box-shadow: 0 5px 15px rgba(0,0,0,0.3);            max-width: 450px;        }
+        .modal-content h3 {            margin-top: 0;            color: #333;        }
+        .modal-actions {            margin-top: 25px;            display: flex;            justify-content: center;            gap: 15px;            flex-wrap: wrap;        }
+        .modal-actions button {            border: none;            padding: 10px 20px;            font-size: 16px;            border-radius: 6px;            cursor: pointer;            color: white;            min-width: 120px;        }
+        #modalReviewBtn { background-color: #007AFF; }
+        #modalAddAllBtn { background-color: #28a745; }
+        #modalCancelAllBtn { background-color: #dc3545; }
+        #modalReviewBtn:hover { background-color: #0056b3; }
+        #modalAddAllBtn:hover { background-color: #218838; }
+        #modalCancelAllBtn:hover { background-color: #c82333; }
+        #categoryCheckboxContainer {            text-align: left;            max-height: 300px;            overflow-y: auto;            margin: 20px 0;            border: 1px solid #ddd;            padding: 10px;            border-radius: 6px;            background-color: #f9f9f9;        }
+        #categoryCheckboxContainer label {            display: block;            margin: 8px 5px;            cursor: pointer;            font-size: 1em;        }
+        #categoryCheckboxContainer input {            margin-right: 12px;            vertical-align: middle;        }
+        #categoryFilterApplyBtn { background-color: #28a745; }
+        #categoryFilterApplyBtn:hover { background-color: #218838; }
+        #categoryFilterCancelBtn { background-color: #6c757d; }
+        #categoryFilterCancelBtn:hover { background-color: #5a6268; }
+        .edit-modal-overlay {            position: fixed;            top: 0;            left: 0;            width: 100%;            height: 100%;            background-color: rgba(0,0,0,0.6);            display: flex;            justify-content: center;            align-items: center;            z-index: 1000;        }
+        .edit-modal-content {            background: white;            padding: 25px;            border-radius: 8px;            width: 90%;            max-width: 500px;            box-shadow: 0 5px 15px rgba(0,0,0,0.3);        }
+        .edit-modal-content h3 {            margin-top: 0;            color: #333;        }
+        .edit-modal-content .input-row {            display: flex;            flex-wrap: wrap;            gap: 10px;            margin-bottom: 15px;            align-items: center;        }
+        .edit-modal-content label {            width: 120px;            font-weight: bold;        }
+        .edit-modal-content input,
+        .edit-modal-content select {            flex: 1;            padding: 8px;            border-radius: 6px;            border: 1px solid #ddd;            font-size: 14px;        }
+        .edit-modal-actions {            display: flex;            justify-content: center;            gap: 15px;            margin-top: 20px;        }
+        .edit-modal-actions button {            padding: 10px 20px;            font-size: 16px;            border-radius: 6px;            border: none;            color: white;            cursor: pointer;        }
+        #editSaveBtn {            background-color: #28a745;        }
+        #editSaveBtn:hover {            background-color: #218838;        }
+        #editCancelBtn {            background-color: #dc3545;        }
+        #editCancelBtn:hover {            background-color: #c82333;        }
+        .wizard-modal-content {            background: white;            padding: 25px;            border-radius: 8px;            width: 90%;            max-width: 600px;            box-shadow: 0 5px 15px rgba(0,0,0,0.3);        }
+        .wizard-table {            width: 100%;            margin-top: 15px;            border-collapse: collapse;        }
+        .wizard-table th, .wizard-table td {            padding: 8px;            border: 1px solid #ddd;            text-align: left;        }
+        .wizard-table th {            background-color: #f2f2f2;        }
+        .wizard-table td:nth-child(3) {            font-style: italic;            color: #555;        }
+        .wizard-table select {            width: 100%;            padding: 5px;            border-radius: 4px;            border: 1px solid #ddd;        }
+        .wizard-actions {            display: flex;            justify-content: center;            gap: 15px;            margin-top: 20px;        }
+        .wizard-actions button {            padding: 10px 20px;            font-size: 16px;            border-radius: 6px;            border: none;            color: white;            cursor: pointer;        }
+        #wizardConfirmBtn {            background-color: #28a745;        }
+        #wizardConfirmBtn:hover {            background-color: #218838;        }
+        #wizardCancelBtn {            background-color: #dc3545;        }
+        #wizardCancelBtn:hover {            background-color: #c82333;        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Ken's Vacation Expense Tracker</h1>
+        <div class="tabs">
+            <button class="tab-button active" onclick="openTab(event, 'dashboardTab')">Dashboard</button>
+            <button class="tab-button" onclick="openTab(event, 'entriesTab')">Entries</button>
+            <button class="tab-button" onclick="openTab(event, 'descriptionsTab')">Descriptions</button>
+            <button class="tab-button" onclick="openTab(event, 'calculatorsTab')">Calculators</button>
+        </div>
+        <div id="dashboardTab" class="tab-content" style="display: block;">
+            <div class="summary-container">
+                <div class="summary-card" id="totalDistance"><h4>Total Miles Driven</h4><p id="totalDistanceValue">0.00 miles</p></div>
+                <div class="summary-card" id="totalFuelUsed"><h4>Total Fuel Used</h4><p id="totalFuelUsedValue">0.00 gallons</p></div>
+                <div class="summary-card" id="averageMPG"><h4>Average MPG</h4><p id="averageMPGValue">0.00 mpg</p></div>
+                <div class="summary-card" id="grandTotal"><h4>Grand Total</h4><p id="grandTotalValue">$0.00</p></div>
+                <div class="summary-card" id="totalHST"><h4>Total HST (13%)</h4><p id="totalHSTValue">$0.00</p></div>
+                <div class="summary-card" id="averagePerDay"><h4>Overall Avg / Day</h4><p id="averagePerDayValue">$0.00</p></div>
+                <div class="summary-card" id="tripDurationAverage"><h4>Avg / Day (Trip Duration)</h4><p id="tripDurationAverageValue">$0.00</p></div>
+            </div>
+            <hr>
+            <h3 style="text-align: center; margin-top: 30px; color: #555;">Category Spending Summary</h3>
+            <div class="category-averages-container" id="categoryAveragesContainer"></div>
+            <hr>
+            <div class="chart-container"><h3 style="text-align: center; margin-bottom: 15px; color: #555;">Spending by Category</h3><canvas id="expenseChart"></canvas></div>
+            <div class="ranking-container"><h3 style="text-align: center; margin-bottom: 15px; color: #555;">Spending by Category (Ranked)</h3><div id="rankingList"></div></div>
+			<hr>
+            <div class="chart-container"><h3 style="text-align: center; margin-bottom: 15px; color: #555;">Monthly Spending Summary</h3><canvas id="monthlyExpenseChart"></canvas></div>
+			<hr>
+			<div class="chart-container"><h3 style="text-align: center; margin-bottom: 15px; color: #555;">Category Spending Over Last 12 Months</h3><canvas id="categoryTrendChart"></canvas></div>
+        </div>
+        <div id="entriesTab" class="tab-content">
+            <form id="expenseForm">
+                <div class="input-row">
+                    <label for="category">Category:</label>
+                    <select id="category">
+                        <option value="Alcohol">Alcohol</option>
+                        <option value="Auto & Travel">Auto & Travel</option>
+                        <option value="Auto Maintenance & Repair">Auto Maintenance & Repair</option>
+                        <option value="Brokerage Fees">Brokerage Fees</option>
+                        <option value="Car Insurance">Car Insurance</option>
+                        <option value="Cell Phone">Cell Phone</option>
+                        <option value="Client Gifts">Client Gifts</option>
+                        <option value="Clothing">Clothing</option>
+                        <option value="Dental">Dental</option>
+                        <option value="Dining Out">Dining Out</option>
+                        <option value="Education & Coaching">Education & Coaching</option>
+                        <option value="Entertainment">Entertainment</option>
+                        <option value="Gasoline">Gasoline</option>
+                        <option value="Golf">Golf</option>
+                        <option value="Groceries">Groceries</option>
+                        <option value="Healthcare">Healthcare</option>
+                        <option value="Home Insurance">Home Insurance</option>
+                        <option value="Hotels">Hotels</option>
+                        <option value="Household">Household</option>
+                        <option value="Hydro-Electric Utility">Hydro-Electric Utility</option>
+                        <option value="Internet">Internet</option>
+                        <option value="Marketing & Advertising">Marketing & Advertising</option>
+                        <option value="MLS & Board Fees">MLS & Board Fees</option>
+                        <option value="Monthly Brokerage Fee">Monthly Brokerage Fee</option>
+                        <option value="Natural Gas">Natural Gas</option>
+                        <option value="Office Supplies & Equipment">Office Supplies & Equipment</option>
+                        <option value="Other">Other</option>
+                        <option value="Parking">Parking</option>
+                        <option value="Property Taxes">Property Taxes</option>
+                        <option value="REAL ESTATE ASSOCIATION FEES">REAL ESTATE ASSOCIATION FEES</option>
+                        <option value="Tax Preparation">Tax Preparation</option>
+                        <option value="Technology & Software">Technology & Software</option>
+                        <option value="Tolls">Tolls</option>
+                        <option value="Travel Insurance">Travel Insurance</option>
+                        <option value="Vacation">Vacation</option>
+                        <option value="Vacation Alcohol">Vacation Alcohol</option>
+                        <option value="Vacation Camping">Vacation Camping</option>
+                        <option value="Vacation Cruise">Vacation Cruise</option>
+                        <option value="Vacation Dining Out">Vacation Dining Out</option>
+                        <option value="Vacation Entertainment">Vacation Entertainment</option>
+                        <option value="Vacation Gas">Vacation Gas</option>
+                        <option value="Vacation Groceries">Vacation Groceries</option>
+                        <option value="Vacation Hotels">Vacation Hotels</option>
+                        <option value="Vacation Parking">Vacation Parking</option>
+                        <option value="Vacation Tolls">Vacation Tolls</option>
+                        <option value="Vacation Travel Insurance">Vacation Travel Insurance</option>
+                        <option value="Website Hosting">Website Hosting</option>
+                        <option value="Website Maintenance">Website Maintenance</option>
+                    </select>
+                    <label for="description">Description:</label>
+                    <input type="text" id="description" required>
+                    <label for="amount">Amount:</label>
+                    <input type="number" id="amount" step="0.01" required>
+                    <label for="date">Date:</label>
+                    <input type="date" id="date" required>
+                </div>
+                <hr style="margin: 15px 0;">
+                <div class="input-row">
+                    <label for="odometer">Odometer (km):</label>
+                    <input type="number" id="odometer" step="0.1">
+                    <label for="fuelGallons">Fuel (US Gal):</label>
+                    <input type="number" id="fuelGallons" step="0.01" placeholder="Leave empty if liters">
+                    <label for="fuelLiters">Fuel (Liters):</label>
+                    <input type="number" id="fuelLiters" step="0.01" placeholder="Leave empty if gallons">
+                </div>
+                <button type="submit">Add Expense</button>
+            </form>
+            </form> <datalist id="existingCategoriesDatalist"></datalist>
+            <div class="date-filters">
+                <label for="startDate">Start Date:</label>
+                <input type="date" id="startDate" class="date-filter-input">
+                <label for="endDate">End Date:</label>
+                <input type="date" id="endDate" class="date-filter-input">
+                <button id="clearDatesButton" class="filter-action-button">Clear Dates</button>
+                <button id="multiCategoryFilterButton" class="filter-action-button">Filter by Categories</button>
+            </div>
+            <div class="sort-buttons">
+                <button id="sortByCategoryButton">Sort by Category</button>
+                <button id="sortByDescription">Sort by Description</button>
+                <button id="sortByDate">Sort by Date</button>
+                <button id="sortByAmount">Sort by Amount</button>
+            </div>
+            <div class="action-buttons">
+                <button id="reportButton">Generate Report</button>
+                <button id="exportButton">Export to CSV</button>
+                <button id="importButton">Import CSV</button>
+                <input type="file" id="fileInput" style="display: none;" accept=".csv">
+                <button id="retainDataDeleteButton">Delete All & Retain Memory</button>
+                <button id="archiveDeleteButton">Archive & Delete All</button>
+                <button id="deleteAllButton">Delete All (Permanent)</button>
+            </div>
+            <table id="expenseTable">
+                <thead>
+                    <tr>
+                        <th>Category</th>
+                        <th>Notes</th>
+                        <th>Description</th>
+                        <th>Amount</th>
+                        <th>HST (13%)</th>
+                        <th>Date</th>
+                        <th>Miles</th>
+                        <th>Fuel Used (Gal)</th>
+                        <th>MPG</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+        <div id="descriptionsTab" class="tab-content">
+            <h3 style="text-align: center; margin-top: 30px; color: #555;">Description Spending Summary</h3>
+            <div class="category-averages-container" id="descriptionCardsContainer">
+            </div>
+        </div>
+        <div id="calculatorsTab" class="tab-content">
+            <div class="calc-tabs">
+                <button class="calc-tab-button active" onclick="openCalcTab(event, 'budgetCalc')">Daily Budget</button>
+                <button class="calc-tab-button" onclick="openCalcTab(event, 'tipCalc')">Tip</button>
+                <button class="calc-tab-button" onclick="openCalcTab(event, 'fuelCalc')">Fuel Cost</button>
+                <button class="calc-tab-button" onclick="openCalcTab(event, 'currencyCalc')">Currency</button>
+                <button class="calc-tab-button" onclick="openCalcTab(event, 'unitCalc')">Units</button>
+            </div>
+            <div id="budgetCalc" class="calc-tab-content" style="display: block;">
+                <div class="calculator">
+                    <h2>Dynamic Budget Tracker</h2>
+                    <div class="calc-input-group">
+                        <label for="totalBudget">Total Trip Budget ($)</label>
+                        <input type="number" id="totalBudget" placeholder="e.g., 2000" oninput="updateBudgetTracker()">
+                    </div>
+                    <div class="calc-input-group">
+                        <label for="tripStartDate">Trip Start Date</label>
+                        <input type="date" id="tripStartDate" onchange="updateBudgetTracker()">
+                    </div>
+                    <div class="calc-input-group">
+                        <label for="tripEndDate">Trip End Date</label>
+                        <input type="date" id="tripEndDate" onchange="updateBudgetTracker()">
+                    </div>
+                    <div class="calc-result" id="budgetResult">
+                        <p>Status: <span id="budgetStatus">Enter details above</span></p><hr><p>Target Daily Spend: <span id="targetDailySpend">$0.00</span></p><p>Budget Through Today: <span id="budgetToDate">$0.00</span></p><p>Actual Spend To Date: <span id="actualSpendToDate">$0.00</span></p>
+                    </div>
+                </div>
+            </div>
+            <div id="tipCalc" class="calc-tab-content">
+                <div class="calculator">
+                    <h2>Tip Calculator</h2>
+                    <div class="calc-input-group"><label for="billAmount">Bill Amount ($)</label><input type="number" id="billAmount" placeholder="e.g., 50.00" oninput="calculateTip()"></div>
+                    <div class="calc-input-group"><label for="tipPercentage">Tip Percentage (%)</label><input type="number" id="tipPercentage" value="18" oninput="calculateTip()"></div>
+                    <div class="calc-input-group"><label for="numPeople">Split Between (people)</label><input type="number" id="numPeople" value="1" oninput="calculateTip()"></div>
+                    <div class="calc-result" id="tipResult"><p>Fill out the fields to calculate.</p></div>
+                </div>
+            </div>
+            <div id="fuelCalc" class="calc-tab-content">
+                <div class="calculator">
+                    <h2>Fuel Cost Calculator</h2>
+                    <div class="calc-input-group"><label for="tripDistance">Trip Distance (miles)</label><input type="number" id="tripDistance" placeholder="e.g., 300" oninput="calculateFuelCost()"></div>
+                    <div class="calc-input-group"><label for="fuelEfficiency">Vehicle Efficiency (MPG)</label><input type="number" id="fuelEfficiency" placeholder="e.g., 25" oninput="calculateFuelCost()"></div>
+                    <div class="calc-input-group"><label for="gasPrice">Price Per Gallon ($)</label><input type="number" id="gasPrice" placeholder="e.g., 3.50" oninput="calculateFuelCost()"></div>
+                    <div class="calc-result" id="fuelResult"><p>Total Estimated Fuel Cost: <span>$0.00</span></p></div>
+                </div>
+            </div>
+            <div id="currencyCalc" class="calc-tab-content">
+                <div class="currency-converter">
+                    <h2>Ken's Currency Converter</h2>
+                    <div class="calc-input-group"><label for="calcAmount">Amount</label><input type="number" id="calcAmount" placeholder="Enter amount"></div>
+                    <div class="calc-input-group">
+                        <label for="calcCurrency">Select Currency</label>
+                        <select id="calcCurrency"><option value="USD">USD to CAD</option><option value="CAD">CAD to USD</option></select>
+                    </div>
+                    <button class="button" onclick="standaloneConvertCurrency()">Convert</button>
+                    <div class="result calc-result" id="calcResult">
+                        <p><strong>Cash Exchange Rate:</strong> <span id="calcCashExchangeRate">N/A</span></p>
+                        <p><strong>Mastercard Rate (Incl. 2.5% Fee):</strong> <span id="calcMastercardExchangeRate">N/A</span></p>
+                    </div>
+                </div>
+            </div>
+            <div id="unitCalc" class="calc-tab-content">
+                <div class="calculator">
+                    <h2>Temperature Converter</h2>
+                    <div class="calc-input-group"><label for="fahrenheit">Fahrenheit ($°F$)</label><input type="number" id="fahrenheit" oninput="convertTemp('f')" placeholder="e.g., 68"></div>
+                    <div class="calc-input-group"><label for="celsius">Celsius ($°C$)</label><input type="number" id="celsius" oninput="convertTemp('c')" placeholder="e.g., 20"></div>
+                    <hr style="margin: 30px 0;">
+                    <h2>Distance Converter</h2>
+                    <div class="calc-input-group"><label for="miles">Miles</label><input type="number" id="miles" oninput="convertDistance('mi')" placeholder="e.g., 100"></div>
+                    <div class="calc-input-group"><label for="kilometers">Kilometers</label><input type="number" id="kilometers" oninput="convertDistance('km')" placeholder="e.g., 160.9"></div>
+                    <hr style="margin: 30px 0;">
+                    <h2>Liquid Volume Converter</h2>
+                    <div class="calc-input-group"><label for="gallons">Gallons (US):</label><input type="number" id="gallons" placeholder="Enter gallons" oninput="convertVolume('gallons')" step="0.01"></div>
+                    <div class="calc-input-group"><label for="liters">Liters:</label><input type="number" id="liters" placeholder="Enter liters" oninput="convertVolume('liters')" step="0.01"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="importModal" class="modal-overlay" style="display: none;"><div class="modal-content"><h3 id="modalTitle">Import Options</h3><p id="modalMessage"></p><div class="modal-actions"><button id="modalReviewBtn">Review Each</button><button id="modalAddAllBtn">Add All</button><button id="modalCancelAllBtn">Cancel Import</button></div></div></div>
+    <div id="categoryFilterModal" class="modal-overlay" style="display: none;"><div class="modal-content"><h3>Select Categories to Display</h3><div id="categoryCheckboxContainer"></div><div class="modal-actions"><button id="categoryFilterApplyBtn">Apply Filter</button><button id="categoryFilterCancelBtn">Cancel</button></div></div></div>
+    <div id="editModal" class="edit-modal-overlay" style="display: none;"><div class="edit-modal-content"><h3>Edit Expense</h3><form id="editExpenseForm"><div class="input-row"><label for="editCategory">Category:</label><input type="text" id="editCategory" list="existingCategoriesDatalist"><label for="editDescription">Description:</label><input type="text" id="editDescription" required></div><div class="input-row"><label for="editNotes">Notes:</label><input type="text" id="editNotes" style="flex: 1;"></div><div class="input-row"><label for="editAmount">Amount:</label><input type="number" id="editAmount" step="0.01" required><label for="editDate">Date:</label><input type="date" id="editDate" required></div><div class="input-row"><label for="editOdometer">Odometer (km):</label><input type="number" id="editOdometer" step="0.1"><label for="editFuelGallons">Fuel (US Gal):</label><input type="number" id="editFuelGallons" step="0.01" placeholder="Leave empty if liters"><label for="editFuelLiters">Fuel (Liters):</label><input type="number" id="editFuelLiters" step="0.01" placeholder="Leave empty if gallons"></div><div class="input-row" style="justify-content: flex-start; margin-top: 15px; align-items: center;"><input type="checkbox" id="editApplyToAll" style="width: auto; flex: 0 0 auto; margin-right: 10px;"><label for="editApplyToAll" style="width: auto; font-weight: normal;">Apply this category to all entries with the same description</label></div><div class="edit-modal-actions"><button type="submit" id="editSaveBtn">Save</button><button type="button" id="editCancelBtn">Cancel</button></div></form></div></div>
+    <div id="wizardModal" class="modal-overlay" style="display: none;"><div class="wizard-modal-content"><h3>Import Wizard - Map Columns</h3><p>Please map the CSV columns to the expected fields. Sample data from the first row is shown for reference.</p><table class="wizard-table"><thead><tr><th>CSV Column</th><th>Map to Field</th><th>Sample Data</th></tr></thead><tbody id="wizardTableBody"></tbody></table><div class="wizard-actions"><button id="wizardConfirmBtn">Confirm Mapping</button><button id="wizardCancelBtn">Cancel</button></div></div></div>
+    <script>
+    // --- Tab Switching ---
+    function openTab(evt, tabName) {
+        document.querySelectorAll(".tab-content").forEach(tab => tab.style.display = "none");
+        document.querySelectorAll(".tab-button").forEach(link => link.classList.remove("active"));
+        document.getElementById(tabName).style.display = "block";
+        evt.currentTarget.classList.add("active");
+    }
+    function openCalcTab(evt, calcName) {
+        document.querySelectorAll(".calc-tab-content").forEach(tab => tab.style.display = "none");
+        document.querySelectorAll(".calc-tab-button").forEach(link => link.classList.remove("active"));
+        document.getElementById(calcName).style.display = "block";
+        evt.currentTarget.classList.add("active");
+    }
+
+    // --- Currency Converter ---
+    let calcExchangeRate = 1.36;
+    async function fetchCalcExchangeRate() {
+        try {
+            const response = await fetch('https://api.exchangerate-api.com/v4/latest/USD');
+            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+            const data = await response.json();
+            calcExchangeRate = data.rates.CAD;
+        } catch (error) {
+            console.error("Error fetching exchange rate:", error);
+            document.getElementById('calcCashExchangeRate').textContent = 'Rate N/A';
+            document.getElementById('calcMastercardExchangeRate').textContent = 'Rate N/A';
+        }
+    }
+    function standaloneConvertCurrency() {
+        const amountInput = document.getElementById('calcAmount');
+        const currencySelect = document.getElementById('calcCurrency');
+        const cashResultSpan = document.getElementById('calcCashExchangeRate');
+        const mcResultSpan = document.getElementById('calcMastercardExchangeRate');
+        const amount = parseFloat(amountInput.value);
+        if (isNaN(amount) || amount < 0) {
+            cashResultSpan.textContent = 'Invalid amount';
+            mcResultSpan.textContent = 'Invalid amount';
+            return;
+        }
+        const currency = currencySelect.value;
+        let convertedAmount, mastercardAmount;
+        const fee = 1.025;
+        if (currency === 'USD') {
+            convertedAmount = amount * calcExchangeRate;
+            mastercardAmount = convertedAmount * fee;
+        } else {
+            convertedAmount = amount / calcExchangeRate;
+            let mcRate = calcExchangeRate * fee;
+            mastercardAmount = amount / mcRate;
+        }
+        cashResultSpan.textContent = `${convertedAmount.toFixed(2)} ${currency === 'USD' ? 'CAD' : 'USD'}`;
+        mcResultSpan.textContent = `${mastercardAmount.toFixed(2)} ${currency === 'USD' ? 'CAD' : 'USD'}`;
+    }
+    // --- Unit and Budget Calculators ---
+    function convertTemp(unit) {
+        const fahrenheitInput = document.getElementById('fahrenheit');
+        const celsiusInput = document.getElementById('celsius');
+        if (unit === 'f') {
+            const fahrenheit = parseFloat(fahrenheitInput.value);
+            if (!isNaN(fahrenheit)) celsiusInput.value = ((fahrenheit - 32) * 5 / 9).toFixed(2);
+        } else {
+            const celsius = parseFloat(celsiusInput.value);
+            if (!isNaN(celsius)) fahrenheitInput.value = (celsius * 9 / 5 + 32).toFixed(2);
+        }
+    }
+    function convertDistance(unit) {
+        const milesInput = document.getElementById('miles');
+        const kilometersInput = document.getElementById('kilometers');
+        if (unit === 'mi') {
+            const miles = parseFloat(milesInput.value);
+            if (!isNaN(miles)) kilometersInput.value = (miles * 1.60934).toFixed(2);
+        } else {
+            const kilometers = parseFloat(kilometersInput.value);
+            if (!isNaN(kilometers)) milesInput.value = (kilometers / 1.60934).toFixed(2);
+        }
+    }
+    function convertVolume(unit) {
+        const gallonsInput = document.getElementById('gallons');
+        const litersInput = document.getElementById('liters');
+        if (unit === 'gallons') {
+            const gallons = parseFloat(gallonsInput.value);
+            if (!isNaN(gallons)) litersInput.value = (gallons * 3.78541).toFixed(2);
+        } else {
+            const liters = parseFloat(litersInput.value);
+            if (!isNaN(liters)) gallonsInput.value = (liters / 3.78541).toFixed(2);
+        }
+    }
+    function calculateTip() {
+        const billAmount = parseFloat(document.getElementById('billAmount').value);
+        const tipPercentage = parseFloat(document.getElementById('tipPercentage').value);
+        const numPeople = parseInt(document.getElementById('numPeople').value);
+        const resultDiv = document.getElementById('tipResult');
+        if (isNaN(billAmount) || isNaN(tipPercentage) || isNaN(numPeople) || billAmount < 0 || tipPercentage < 0 || numPeople < 1) {
+            resultDiv.innerHTML = '<p>Please enter valid values.</p>';
+            return;
+        }
+        const tipAmount = billAmount * (tipPercentage / 100);
+        const totalWithTip = billAmount + tipAmount;
+        const tipPerPerson = tipAmount / numPeople;
+        const totalPerPerson = totalWithTip / numPeople;
+        resultDiv.innerHTML = `<p>Total Tip: <span>$${tipAmount.toFixed(2)}</span></p><p>Total with Tip: <span>$${totalWithTip.toFixed(2)}</span></p><p>Tip per Person: <span>$${tipPerPerson.toFixed(2)}</span></p><p>Total per Person: <span>$${totalPerPerson.toFixed(2)}</span></p>`;
+    }
+    function calculateFuelCost() {
+        const distance = parseFloat(document.getElementById('tripDistance').value);
+        const efficiency = parseFloat(document.getElementById('fuelEfficiency').value);
+        const price = parseFloat(document.getElementById('gasPrice').value);
+        const resultDiv = document.getElementById('fuelResult');
+        if (isNaN(distance) || isNaN(efficiency) || isNaN(price) || distance < 0 || efficiency <= 0 || price < 0) {
+            resultDiv.innerHTML = '<p>Please enter valid values.</p>';
+            return;
+        }
+        const gallonsNeeded = distance / efficiency;
+        const totalCost = gallonsNeeded * price;
+        resultDiv.innerHTML = `<p>Total Estimated Fuel Cost: <span>$${totalCost.toFixed(2)}</span></p>`;
+    }
+    function updateBudgetTracker() {
+        const totalBudget = parseFloat(document.getElementById('totalBudget').value);
+        const startDateStr = document.getElementById('tripStartDate').value;
+        const endDateStr = document.getElementById('tripEndDate').value;
+        const resultDiv = document.getElementById('budgetResult');
+        if (isNaN(totalBudget) || !startDateStr || !endDateStr) {
+            resultDiv.innerHTML = '<p>Status: <span id="budgetStatus">Enter details above</span></p><hr><p>Target Daily Spend: <span id="targetDailySpend">$0.00</span></p><p>Budget Through Today: <span id="budgetToDate">$0.00</span></p><p>Actual Spend To Date: <span id="actualSpendToDate">$0.00</span></p>';
+            return;
+        }
+        const startDate = new Date(startDateStr);
+        const endDate = new Date(endDateStr);
+        const today = new Date();
+        if (startDate > endDate) {
+            resultDiv.innerHTML = '<p>Status: <span id="budgetStatus">Start date must be before end date</span></p><hr><p>Target Daily Spend: <span id="targetDailySpend">$0.00</span></p><p>Budget Through Today: <span id="budgetToDate">$0.00</span></p><p>Actual Spend To Date: <span id="actualSpendToDate">$0.00</span></p>';
+            return;
+        }
+        const totalDays = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
+        const daysToToday = Math.min(Math.ceil((today - startDate) / (1000 * 60 * 60 * 24)) + 1, totalDays);
+        const dailyBudget = totalBudget / totalDays;
+        const budgetToDate = dailyBudget * daysToToday;
+        const actualSpend = expenses.filter(exp => {
+            const expDate = new Date(exp.date);
+            return expDate >= startDate && expDate <= today;
+        }).reduce((sum, exp) => sum + exp.amount, 0);
+        const status = actualSpend > budgetToDate ? 'Over Budget' : 'Under Budget';
+        resultDiv.innerHTML = `<p>Status: <span id="budgetStatus" class="${status.toLowerCase().replace(' ', '-')}"">${status}</span></p><hr><p>Target Daily Spend: <span id="targetDailySpend">$${dailyBudget.toFixed(2)}</span></p><p>Budget Through Today: <span id="budgetToDate">$${budgetToDate.toFixed(2)}</span></p><p>Actual Spend To Date: <span id="actualSpendToDate">$${actualSpend.toFixed(2)}</span></p>`;
+    }
+
+    // --- Data Management ---
+    let expenses = JSON.parse(localStorage.getItem('expenses')) || [];
+    let sortConfig = { key: 'date', direction: 'desc' };
+    let selectedCategories = []; 
+    function saveData() { localStorage.setItem('expenses', JSON.stringify(expenses)); }
+
+    function getFilteredExpenses() {
+        const startDate = document.getElementById('startDate').value;
+        const endDate = document.getElementById('endDate').value;
+        return expenses.filter(exp => {
+            const dateMatch = (() => {
+                if (!startDate && !endDate) return true;
+                const expDate = new Date(exp.date + 'T00:00:00');
+                const start = startDate ? new Date(startDate + 'T00:00:00') : new Date(-8640000000000000);
+                const end = endDate ? new Date(endDate + 'T00:00:00') : new Date(8640000000000000);
+                end.setDate(end.getDate() + 1);
+                return expDate >= start && expDate < end;
+            })();
+            const categoryMatch = (selectedCategories.length === 0 || selectedCategories.includes(exp.category));
+            return dateMatch && categoryMatch;
+        });
+    }
+    function updateUI() {
+        populateDatalist();
+        updateTable();
+        updateSummary();
+        updateCategoryAverages();
+        updateDescriptionStats();
+        updateChart();
+        updateRanking();
+        updateBudgetTracker();
+        updateMonthlyChart();
+        updateCategoryTrendChart();
+        updateFilterButtonState(); 
+    }
+    function updateTable() {
+        const tbody = document.querySelector('#expenseTable tbody');
+        tbody.innerHTML = '';
+        const filteredExpenses = getFilteredExpenses();
+        filteredExpenses.sort((a, b) => {
+            if (sortConfig.key === 'amount') {
+                return sortConfig.direction === 'asc' ? a.amount - b.amount : b.amount - a.amount;
+            }
+            if (sortConfig.key === 'category') {
+                return sortConfig.direction === 'asc' ? a.category.localeCompare(b.category) : b.category.localeCompare(a.category);
+            }
+            if (sortConfig.key === 'description') {
+                return sortConfig.direction === 'asc' ? a.description.localeCompare(b.description) : b.description.localeCompare(a.description);
+            }
+            return sortConfig.direction === 'asc' ? new Date(a.date) - new Date(b.date) : new Date(b.date) - new Date(a.date);
+        });
+        filteredExpenses.forEach(exp => {
+            const row = tbody.insertRow();
+            const mpg = exp.fuelGallons > 0 ? (exp.odometerMiles / exp.fuelGallons).toFixed(2) : 'N/A';
+            const hstValue = exp.hst !== undefined ? exp.hst : (exp.amount - (exp.amount / 1.13));
+            row.innerHTML = `<td>${exp.category}</td><td>${exp.notes || ''}</td><td>${exp.description}</td><td>$${exp.amount.toFixed(2)}</td><td>$${hstValue.toFixed(2)}</td><td>${exp.date}</td><td>${exp.odometerMiles.toFixed(2)}</td><td>${exp.fuelGallons.toFixed(2)}</td><td>${mpg}</td><td><button class="edit-btn" onclick="editExpense(${exp.id})">Edit</button><button onclick="deleteExpense(${exp.id})">Delete</button></td>`;
+        });
+    }
+
+    function updateSummary() {
+        const filteredExpenses = getFilteredExpenses();
+        const totalDistance = filteredExpenses.reduce((sum, exp) => sum + exp.odometerMiles, 0);
+        const totalFuelUsed = filteredExpenses.reduce((sum, exp) => sum + exp.fuelGallons, 0);
+        const averageMPG = totalFuelUsed > 0 ? (totalDistance / totalFuelUsed).toFixed(2) : 0;
+        const grandTotal = filteredExpenses.reduce((sum, exp) => sum + exp.amount, 0);
+        const totalHST = filteredExpenses.reduce((sum, exp) => {
+            const hstValue = exp.hst !== undefined ? exp.hst : (exp.amount - (exp.amount / 1.13));
+            return sum + hstValue;
+        }, 0);
+        const uniqueDays = [...new Set(filteredExpenses.map(exp => exp.date))].length;
+        const averagePerDay = uniqueDays > 0 ? (grandTotal / uniqueDays).toFixed(2) : 0;
+        
+        document.getElementById('totalDistanceValue').textContent = `${totalDistance.toFixed(2)} miles`;
+        document.getElementById('totalFuelUsedValue').textContent = `${totalFuelUsed.toFixed(2)} gallons`;
+        document.getElementById('averageMPGValue').textContent = `${averageMPG} mpg`;
+        document.getElementById('grandTotalValue').textContent = `$${grandTotal.toFixed(2)}`;
+        document.getElementById('totalHSTValue').textContent = `$${totalHST.toFixed(2)}`;
+        document.getElementById('averagePerDayValue').textContent = `$${averagePerDay}`;
+
+        const startDateStr = document.getElementById('startDate').value;
+        const endDateStr = document.getElementById('endDate').value;
+        let tripDurationAverageText = '$0.00';
+        if (startDateStr && endDateStr) {
+            const start = new Date(startDateStr);
+            const end = new Date(endDateStr);
+            const durationInDays = ((end - start) / (1000 * 60 * 60 * 24)) + 1;
+            if (durationInDays >= 1) {
+                const average = grandTotal / durationInDays;
+                tripDurationAverageText = `$${average.toFixed(2)}`;
+            }
+        }
+        document.getElementById('tripDurationAverageValue').textContent = tripDurationAverageText;
+    }
+    function updateCategoryAverages() {
+        let filteredExpenses = getFilteredExpenses();
+        filteredExpenses.sort((a, b) => {
+            if (sortConfig.key === 'amount') { return sortConfig.direction === 'asc' ? a.amount - b.amount : b.amount - a.amount; }
+            if (sortConfig.key === 'category') { return sortConfig.direction === 'asc' ? a.category.localeCompare(b.category) : b.category.localeCompare(a.category); }
+            if (sortConfig.key === 'description') { return sortConfig.direction === 'asc' ? a.description.localeCompare(b.description) : b.description.localeCompare(a.description); }
+            return sortConfig.direction === 'asc' ? new Date(a.date) - new Date(b.date) : new Date(b.date) - new Date(a.date);
+        });
+        const categoryStats = {};
+        filteredExpenses.forEach(exp => {
+            if (!categoryStats[exp.category]) { categoryStats[exp.category] = { total: 0, count: 0 }; }
+            categoryStats[exp.category].total += exp.amount;
+            categoryStats[exp.category].count++;
+        });
+        const orderedCategories = [];
+        const seenCategories = new Set();
+        filteredExpenses.forEach(exp => {
+            if (!seenCategories.has(exp.category)) {
+                orderedCategories.push(exp.category);
+                seenCategories.add(exp.category);
+            }
+        });
+        const grandTotal = filteredExpenses.reduce((sum, exp) => sum + exp.amount, 0);
+        const container = document.getElementById('categoryAveragesContainer');
+        container.innerHTML = '';
+        orderedCategories.forEach(category => {
+            const { total, count } = categoryStats[category];
+            const percentage = grandTotal > 0 ? ((total / grandTotal) * 100).toFixed(2) : 0;
+            const avg = count > 0 ? (total / count).toFixed(2) : 0;
+            const card = document.createElement('div');
+            card.className = 'category-average-card';
+            const colors = getCategoryColor(category);
+            card.style.backgroundImage = `linear-gradient(135deg, ${colors[0]}, ${colors[1]})`;
+            card.innerHTML = `<h4>${category}</h4><p class="percentage">${percentage}%</p><p class="total-amount">$${total.toFixed(2)}</p><p class="avg-amount">Avg: $${avg} / entry</p><small>${count} entries</small>`;
+            container.appendChild(card);
+        });
+    }
+    function updateDescriptionStats() {
+        let filteredExpenses = getFilteredExpenses();
+        filteredExpenses.sort((a, b) => {
+            if (sortConfig.key === 'amount') { return sortConfig.direction === 'asc' ? a.amount - b.amount : b.amount - a.amount; }
+            if (sortConfig.key === 'category') { return sortConfig.direction === 'asc' ? a.category.localeCompare(b.category) : b.category.localeCompare(a.category); }
+            if (sortConfig.key === 'description') { return sortConfig.direction === 'asc' ? a.description.localeCompare(b.description) : b.description.localeCompare(a.description); }
+            return sortConfig.direction === 'asc' ? new Date(a.date) - new Date(b.date) : new Date(b.date) - new Date(a.date);
+        });
+        const descriptionStats = {};
+        filteredExpenses.forEach(exp => {
+            const desc = exp.description || "N/A";
+            if (!descriptionStats[desc]) { descriptionStats[desc] = { total: 0, count: 0 }; }
+            descriptionStats[desc].total += exp.amount;
+            descriptionStats[desc].count++;
+        });
+        const orderedDescriptions = [];
+        const seenDescriptions = new Set();
+        filteredExpenses.forEach(exp => {
+            const desc = exp.description || "N/A";
+            if (!seenDescriptions.has(desc)) {
+                orderedDescriptions.push(desc);
+                seenDescriptions.add(desc);
+            }
+        });
+        const grandTotal = filteredExpenses.reduce((sum, exp) => sum + exp.amount, 0);
+        const container = document.getElementById('descriptionCardsContainer');
+        container.innerHTML = '';
+        orderedDescriptions.forEach(description => {
+            const { total, count } = descriptionStats[description];
+            const percentage = grandTotal > 0 ? ((total / grandTotal) * 100).toFixed(2) : 0;
+            const avg = count > 0 ? (total / count).toFixed(2) : 0;
+            const card = document.createElement('div');
+            card.className = 'category-average-card';
+            const colors = getCategoryColor(description);
+            card.style.backgroundImage = `linear-gradient(135deg, ${colors[0]}, ${colors[1]})`;
+            card.innerHTML = `<h4>${description}</h4><p class="percentage">${percentage}%</p><p class="total-amount">$${total.toFixed(2)}</p><p class="avg-amount">Avg: $${avg} / entry</p><small>${count} entries</small>`;
+            container.appendChild(card);
+        });
+    }
+    const brightColors = [ ['#ff7e5f', '#feb47b'], ['#6a11cb', '#2575fc'], ['#00c6ff', '#0072ff'], ['#f7971e', '#ffd200'], ['#38f9d7', '#43e97b'], ['#ff0084', '#ff00cc'], ['#08aeea', '#2af598'], ['#fa709a', '#fee140'], ['#764ba2', '#667eea'], ['#ff4e50', '#f9d423'], ['#00dbde', '#fc00ff'], ['#a8ff78', '#78ffd6'] ];
+	function getCategoryColor(category) {
+		let hash = 0;
+		for (let i = 0; i < category.length; i++) { hash = category.charCodeAt(i) + ((hash << 5) - hash); }
+		const index = Math.abs(hash % brightColors.length);
+		return brightColors[index];
+	}
+    let expenseChart, monthlyExpenseChart, categoryTrendChart;
+    function updateChart() {
+		const ctx = document.getElementById('expenseChart').getContext('2d');
+		const filteredExpenses = getFilteredExpenses();
+		const categoryTotals = {};
+		filteredExpenses.forEach(exp => { categoryTotals[exp.category] = (categoryTotals[exp.category] || 0) + exp.amount; });
+		const sortedChartData = Object.entries(categoryTotals).sort((a, b) => a[0].localeCompare(b[0]));
+		const labels = sortedChartData.map(item => item[0]);
+		const data = sortedChartData.map(item => item[1]);
+		const backgroundColors = labels.map(category => getCategoryColor(category)[0]);
+		if (expenseChart) expenseChart.destroy();
+		expenseChart = new Chart(ctx, { type: 'pie', data: { labels, datasets: [{ data, backgroundColor: backgroundColors, borderColor: '#fff', borderWidth: 2 }] }, options: { plugins: { legend: { position: 'bottom' } } } });
+	}
+	function updateMonthlyChart() {
+		const ctx = document.getElementById('monthlyExpenseChart').getContext('2d');
+		const filteredExpenses = getFilteredExpenses();
+		const monthlyTotals = {};
+		filteredExpenses.forEach(exp => { const monthYear = exp.date.substring(0, 7); monthlyTotals[monthYear] = (monthlyTotals[monthYear] || 0) + exp.amount; });
+		const sortedMonths = Object.keys(monthlyTotals).sort();
+		const labels = sortedMonths.map(month => { const [year, monthNum] = month.split('-'); return new Date(year, monthNum - 1).toLocaleString('default', { month: 'short', year: 'numeric' }); });
+		const data = sortedMonths.map(month => monthlyTotals[month]);
+		if (monthlyExpenseChart) monthlyExpenseChart.destroy();
+		monthlyExpenseChart = new Chart(ctx, { type: 'bar', data: { labels: labels, datasets: [{ label: 'Total Spending', data: data, backgroundColor: '#28a745', borderColor: '#218838', borderWidth: 1 }] }, options: { scales: { y: { beginAtZero: true, ticks: { callback: function(value) { return '$' + value; } } } }, plugins: { legend: { display: false } } } });
+	}
+	function updateCategoryTrendChart() {
+		const ctx = document.getElementById('categoryTrendChart').getContext('2d');
+		const labels = [];
+		const today = new Date();
+		for (let i = 11; i >= 0; i--) { const d = new Date(today.getFullYear(), today.getMonth() - i, 1); labels.push(d.toLocaleString('default', { month: 'short', year: 'numeric' })); }
+        const filteredForDateRange = getFilteredExpenses();
+        const twelveMonthsAgo = new Date(today.getFullYear(), today.getMonth() - 11, 1);
+        const relevantExpenses = filteredForDateRange.filter(exp => new Date(exp.date) >= twelveMonthsAgo);
+		const categoryMonthlyData = {};
+		relevantExpenses.forEach(exp => {
+			if (!categoryMonthlyData[exp.category]) { categoryMonthlyData[exp.category] = {}; }
+			const monthYear = exp.date.substring(0, 7);
+			categoryMonthlyData[exp.category][monthYear] = (categoryMonthlyData[exp.category][monthYear] || 0) + exp.amount;
+		});
+		const datasets = [];
+		for (const category in categoryMonthlyData) {
+			const data = [];
+			for (let i = 11; i >= 0; i--) {
+				const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
+				const monthYearKey = d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2);
+				data.push(categoryMonthlyData[category][monthYearKey] || 0);
+			}
+			const colorPair = getCategoryColor(category);
+			datasets.push({ label: category, data: data, borderColor: colorPair[0], backgroundColor: colorPair[0] + '33', fill: false, tension: 0.1 });
+		}
+		if (categoryTrendChart) categoryTrendChart.destroy();
+		categoryTrendChart = new Chart(ctx, { type: 'line', data: { labels, datasets }, options: { responsive: true, plugins: { legend: { position: 'top' }, }, scales: { y: { beginAtZero: true, ticks: { callback: function(value) { return '$' + value; } } } } } });
+	}
+    function updateRanking() {
+        const filteredExpenses = getFilteredExpenses();
+        const categoryTotals = {};
+        filteredExpenses.forEach(exp => { categoryTotals[exp.category] = (categoryTotals[exp.category] || 0) + exp.amount; });
+        const grandTotal = filteredExpenses.reduce((sum, exp) => sum + exp.amount, 0);
+        const sortedCategories = Object.entries(categoryTotals).sort((a, b) => b[1] - a[1]);
+        const rankingList = document.getElementById('rankingList');
+        rankingList.innerHTML = '';
+        sortedCategories.forEach(([category, total], index) => {
+            const percentage = grandTotal > 0 ? ((total / grandTotal) * 100).toFixed(2) : 0;
+            const item = document.createElement('div');
+            item.className = 'ranking-item';
+            item.innerHTML = `<div class="rank-info"><span class="rank-position">${index + 1}</span><span class="rank-category">${category}</span></div><div class="rank-details"><span class="rank-amount">$${total.toFixed(2)}</span><span class="rank-percentage">${percentage}%</span></div>`;
+            rankingList.appendChild(item);
+        });
+    }
+    function editExpense(id) {
+        const expense = expenses.find(exp => exp.id === id);
+        if (!expense) return;
+        document.getElementById('editCategory').value = expense.category;
+        document.getElementById('editDescription').value = expense.description;
+        document.getElementById('editNotes').value = expense.notes || '';
+        document.getElementById('editAmount').value = expense.amount;
+        document.getElementById('editDate').value = expense.date;
+        document.getElementById('editOdometer').value = expense.odometerMiles;
+        document.getElementById('editFuelGallons').value = expense.fuelGallons;
+        document.getElementById('editFuelLiters').value = '';
+        document.getElementById('editModal').style.display = 'flex';
+        document.getElementById('editExpenseForm').onsubmit = function(e) {
+            e.preventDefault();
+            const newCategory = document.getElementById('editCategory').value;
+            const newDescription = document.getElementById('editDescription').value;
+            const newNotes = document.getElementById('editNotes').value;
+            const newAmount = parseFloat(document.getElementById('editAmount').value);
+            const newDate = document.getElementById('editDate').value;
+            const newOdometer = parseFloat(document.getElementById('editOdometer').value) || 0;
+            const newFuelGallons = parseFloat(document.getElementById('editFuelGallons').value) || 0;
+            const newFuelLiters = parseFloat(document.getElementById('editFuelLiters').value) || 0;
+            const applyToAll = document.getElementById('editApplyToAll').checked;
+            if (isNaN(newAmount) || newAmount < 0 || !newDate) { alert('Please enter a valid amount and date.'); return; }
+            const newHst = newAmount - (newAmount / 1.13);
+            const convertedFuelGallons = newFuelLiters > 0 ? newFuelLiters / 3.78541 : newFuelGallons;
+            if (applyToAll && newDescription) { expenses.forEach(exp => { if (exp.description === newDescription) { exp.category = newCategory; } }); }
+            expenses = expenses.map(exp => exp.id === id ? { ...exp, category: newCategory, description: newDescription, notes: newNotes, amount: newAmount, hst: newHst, date: newDate, odometerMiles: newOdometer, fuelGallons: convertedFuelGallons } : exp);
+            saveData();
+            updateUI();
+            document.getElementById('editApplyToAll').checked = false;
+            document.getElementById('editModal').style.display = 'none';
+        };
+        document.getElementById('editCancelBtn').onclick = () => {
+            document.getElementById('editApplyToAll').checked = false;
+            document.getElementById('editModal').style.display = 'none';
+        };
+    }
+    function deleteExpense(id) {
+        if (confirm('Are you sure you want to delete this expense?')) {
+            expenses = expenses.filter(exp => exp.id !== id);
+            saveData();
+            updateUI();
+        }
+    }
+    async function promptForDuplicateAction(message) {
+        return new Promise(resolve => {
+            document.getElementById('modalTitle').textContent = 'Import Options';
+            document.getElementById('modalMessage').textContent = message;
+            document.getElementById('importModal').style.display = 'flex';
+            document.getElementById('modalReviewBtn').onclick = () => { document.getElementById('importModal').style.display = 'none'; resolve('review'); };
+            document.getElementById('modalAddAllBtn').onclick = () => { document.getElementById('importModal').style.display = 'none'; resolve('add_all'); };
+            document.getElementById('modalCancelAllBtn').onclick = () => { document.getElementById('importModal').style.display = 'none'; resolve('cancel'); };
+        });
+    }
+    function showImportWizard(headers, sampleRow, onConfirm) {
+        const wizardTableBody = document.getElementById('wizardTableBody');
+        wizardTableBody.innerHTML = '';
+        const requiredFields = [ { name: 'Category', value: 'category' }, { name: 'Notes', value: 'notes' }, { name: 'Description', value: 'description' }, { name: 'Amount', value: 'amount' }, { name: 'Date', value: 'date' }, { name: 'Odometer (Miles)', value: 'odometer' }, { name: 'Fuel Used (Gallons)', value: 'fuel' }, { name: 'Ignore', value: 'ignore' } ];
+        const sampleCells = sampleRow.split(',').map(col => col.replace(/^"|"$/g, '').trim());
+        headers.forEach((header, index) => {
+            const row = wizardTableBody.insertRow();
+            row.innerHTML = `<td>${header}</td><td><select id="map_${index}"><option value="">-- Select Field --</option>${requiredFields.map(field => `<option value="${field.value}">${field.name}</option>`).join('')}</select></td><td>${sampleCells[index] || ''}</td>`;
+        });
+        document.getElementById('wizardModal').style.display = 'flex';
+        document.getElementById('wizardConfirmBtn').onclick = () => {
+            const mapping = {};
+            headers.forEach((_, index) => { const select = document.getElementById(`map_${index}`); if (select.value) mapping[select.value] = index; });
+            document.getElementById('wizardModal').style.display = 'none';
+            onConfirm(mapping);
+        };
+        document.getElementById('wizardCancelBtn').onclick = () => { document.getElementById('wizardModal').style.display = 'none'; onConfirm(null); };
+    }
+    function openCategoryFilterModal() {
+        const container = document.getElementById('categoryCheckboxContainer');
+        const uniqueCategories = [...new Set(expenses.map(exp => exp.category))].sort();
+        container.innerHTML = '';
+        if (uniqueCategories.length > 0) {
+            const selectAllLabel = document.createElement('label');
+            selectAllLabel.style.fontWeight = 'bold';
+            selectAllLabel.innerHTML = `<input type="checkbox" id="selectAllCategoriesCheckbox"> Select All / Deselect All`;
+            container.appendChild(selectAllLabel);
+            container.appendChild(document.createElement('hr'));
+        }
+        uniqueCategories.forEach(category => {
+            const label = document.createElement('label');
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.value = category;
+            checkbox.id = `cat-${category.replace(/[^a-zA-Z0-9]/g, '')}`;
+            if (selectedCategories.length === 0 || selectedCategories.includes(category)) { checkbox.checked = true; }
+            label.appendChild(checkbox);
+            label.appendChild(document.createTextNode(` ${category}`));
+            container.appendChild(label);
+        });
+        document.getElementById('categoryFilterModal').style.display = 'flex';
+        const selectAllCheckbox = document.getElementById('selectAllCategoriesCheckbox');
+        if (selectAllCheckbox) { selectAllCheckbox.addEventListener('change', (e) => { const isChecked = e.target.checked; container.querySelectorAll('input[type="checkbox"]').forEach(chk => { chk.checked = isChecked; }); }); }
+    }
+    function applyCategoryFilter() {
+        const container = document.getElementById('categoryCheckboxContainer');
+        const selected = [];
+        container.querySelectorAll('input[type="checkbox"]:checked').forEach(checkbox => { if (checkbox.id !== 'selectAllCategoriesCheckbox') { selected.push(checkbox.value); } });
+        const allCategories = [...container.querySelectorAll('input[type="checkbox"]')].length - 1;
+        if (selected.length === allCategories) { selectedCategories = []; } else { selectedCategories = selected; }
+        document.getElementById('categoryFilterModal').style.display = 'none';
+        updateUI();
+    }
+    function updateFilterButtonState() {
+        const filterBtn = document.getElementById('multiCategoryFilterButton');
+        const totalCategories = [...new Set(expenses.map(exp => exp.category))].length;
+        if (selectedCategories.length === 0 || selectedCategories.length === totalCategories) {
+            filterBtn.textContent = 'Filter by Categories';
+            filterBtn.style.backgroundColor = '';
+            filterBtn.style.color = '';
+        } else {
+            filterBtn.textContent = `Filtering by ${selectedCategories.length} Categories`;
+            filterBtn.style.backgroundColor = '#007AFF';
+            filterBtn.style.color = 'white';
+        }
+    }
+    // --- Event Listeners ---
+    document.getElementById('expenseForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const category = document.getElementById('category').value;
+        const description = document.getElementById('description').value;
+        const amount = parseFloat(document.getElementById('amount').value);
+        const date = document.getElementById('date').value;
+        const odometerMiles = parseFloat(document.getElementById('odometer').value) || 0;
+        const fuelGallons = parseFloat(document.getElementById('fuelGallons').value) || 0;
+        const fuelLiters = parseFloat(document.getElementById('fuelLiters').value) || 0;
+        if (isNaN(amount) || amount < 0 || !date) { alert('Please enter a valid amount and date.'); return; }
+        const hst = amount - (amount / 1.13);
+        const convertedFuelGallons = fuelLiters > 0 ? fuelLiters / 3.78541 : fuelGallons;
+        expenses.push({ id: Date.now() + Math.random(), category, description, amount, hst, date, odometerMiles, fuelGallons: convertedFuelGallons });
+        saveData();
+        updateUI();
+        this.reset();
+    });
+    document.getElementById('sortByCategoryButton').addEventListener('click', () => { sortConfig = { key: 'category', direction: sortConfig.key === 'category' && sortConfig.direction === 'asc' ? 'desc' : 'asc' }; updateUI(); });
+    document.getElementById('sortByDate').addEventListener('click', () => { sortConfig = { key: 'date', direction: sortConfig.key === 'date' && sortConfig.direction === 'asc' ? 'desc' : 'asc' }; updateUI(); });
+    document.getElementById('sortByAmount').addEventListener('click', () => { sortConfig = { key: 'amount', direction: sortConfig.key === 'amount' && sortConfig.direction === 'asc' ? 'desc' : 'asc' }; updateUI(); });
+    document.getElementById('startDate').addEventListener('change', updateUI);
+    document.getElementById('endDate').addEventListener('change', updateUI);
+    document.getElementById('clearDatesButton').addEventListener('click', () => { document.getElementById('startDate').value = ''; document.getElementById('endDate').value = ''; updateUI(); });
+    document.getElementById('multiCategoryFilterButton').addEventListener('click', openCategoryFilterModal);
+    document.getElementById('categoryFilterApplyBtn').addEventListener('click', applyCategoryFilter);
+    document.getElementById('categoryFilterCancelBtn').addEventListener('click', () => { document.getElementById('categoryFilterModal').style.display = 'none'; });
+    document.getElementById('exportButton').addEventListener('click', () => {
+        const filteredExpenses = getFilteredExpenses();
+        const csvContent = [ 'Category,Notes,Description,Amount,HST (13%),Date,Odometer (Miles),Fuel Used (Gallons)', ...filteredExpenses.map(exp => { const hstValue = exp.hst !== undefined ? exp.hst : (exp.amount - (exp.amount / 1.13)); return `${exp.category},"${(exp.notes || '').replace(/"/g, '""')}","${exp.description.replace(/"/g, '""')}",${exp.amount.toFixed(2)},${hstValue.toFixed(2)},${exp.date},${exp.odometerMiles.toFixed(2)},${exp.fuelGallons.toFixed(2)}` }) ].join('\n');
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'expenses_with_notes.csv';
+        a.click();
+        URL.revokeObjectURL(url);
+    });
+    document.getElementById('sortByDescription').addEventListener('click', () => { sortConfig = { key: 'description', direction: sortConfig.key === 'description' && sortConfig.direction === 'asc' ? 'desc' : 'asc' }; updateUI(); });
+    
+    document.getElementById('reportButton').addEventListener('click', async () => {
+        const filteredExpenses = getFilteredExpenses();
+        if (filteredExpenses.length === 0) {
+            alert("Cannot generate a report with no data or for the current filter.");
+            return;
+        }
+
+        const createChartImage = (chartInstance, width = 600, height = 400) => {
+            return new Promise(resolve => {
+                const offscreenCanvas = document.createElement('canvas');
+                offscreenCanvas.width = width;
+                offscreenCanvas.height = height;
+                new Chart(offscreenCanvas.getContext('2d'), {
+                    type: chartInstance.config.type,
+                    data: chartInstance.config.data,
+                    options: {
+                        ...chartInstance.config.options,
+                        animation: {
+                            onComplete: (e) => {
+                                resolve(e.chart.toBase64Image());
+                                e.chart.destroy();
+                            }
+                        },
+                        responsive: false,
+                        devicePixelRatio: 2.5 
+                    }
+                });
+            });
+        };
+
+        const pieChartImg = await createChartImage(expenseChart, 500, 500);
+        const monthlyChartImg = await createChartImage(monthlyExpenseChart, 800, 400);
+
+        const grandTotal = filteredExpenses.reduce((sum, exp) => sum + exp.amount, 0);
+        const totalHST = filteredExpenses.reduce((sum, exp) => sum + (exp.hst !== undefined ? exp.hst : (exp.amount - (exp.amount/1.13))), 0);
+        const totalDistance = filteredExpenses.reduce((sum, exp) => sum + exp.odometerMiles, 0);
+        const totalFuelUsed = filteredExpenses.reduce((sum, exp) => sum + exp.fuelGallons, 0);
+        const averageMPG = totalFuelUsed > 0 ? (totalDistance / totalFuelUsed) : 0;
+        
+        const summaryHTML = `
+            <h2>Overall Summary</h2>
+            <div class="summary-table">
+                <p><span>Grand Total Expenses:</span> <strong>$${grandTotal.toFixed(2)}</strong></p>
+                <p><span>Total HST (13%):</span> <strong>$${totalHST.toFixed(2)}</strong></p>
+                <p><span>Total Miles Driven:</span> <strong>${totalDistance.toFixed(2)} miles</strong></p>
+                <p><span>Average MPG:</span> <strong>${averageMPG.toFixed(2)} mpg</strong></p>
+            </div>`;
+
+        const reportWindow = window.open('', '_blank');
+        reportWindow.document.write(`
+            <html>
+                <head><title>Expense Report</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; margin: 20px; }
+                        h1, h2 { color: #333; border-bottom: 2px solid #f0f0f0; padding-bottom: 5px;}
+                        .summary-table p { display: flex; justify-content: space-between; border-bottom: 1px solid #eee; padding: 8px 0; margin: 0; }
+                        .summary-table p:last-child { border-bottom: none; }
+                        .chart-container { text-align: center; margin: 30px 0; page-break-inside: avoid; }
+                        img { max-width: 90%; height: auto; border: 1px solid #ddd; }
+                        table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 0.9em; }
+                        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+                        th { background-color: #f2f2f2; }
+                        @media print { body { -webkit-print-color-adjust: exact; } }
+                    </style>
+                </head>
+                <body>
+                    <h1>Expense Report</h1>
+                    <p><strong>Report Generated On:</strong> ${new Date().toLocaleDateString()}</p>
+                    ${summaryHTML}
+                    <div class="chart-container"><h2>Spending by Category</h2><img src="${pieChartImg}"></div>
+                    <div class="chart-container"><h2>Monthly Spending</h2><img src="${monthlyChartImg}"></div>
+                    <h2>Detailed Log</h2>
+                    <table>
+                        <thead><tr><th>Date</th><th>Category</th><th>Description</th><th>Amount</th><th>HST (13%)</th></tr></thead>
+                        <tbody>
+                            ${filteredExpenses.map(exp => `
+                                <tr>
+                                    <td>${exp.date}</td>
+                                    <td>${exp.category}</td>
+                                    <td>${exp.description}</td>
+                                    <td>$${exp.amount.toFixed(2)}</td>
+                                    <td>$${(exp.hst !== undefined ? exp.hst : (exp.amount - (exp.amount/1.13))).toFixed(2)}</td>
+                                </tr>`).join('')}
+                        </tbody>
+                    </table>
+                </body>
+            </html>`);
+        reportWindow.document.close();
+        setTimeout(() => { reportWindow.print(); }, 500);
+    });
+
+    document.getElementById('archiveDeleteButton').addEventListener('click', () => {
+        if (expenses.length === 0) { alert("There are no entries to archive."); return; }
+        if (confirm('Are you sure you want to archive all current entries and then delete them? This saves a backup in your browser\'s local storage.')) {
+            localStorage.setItem('expenses_archive', JSON.stringify(expenses));
+            alert(`${expenses.length} entries have been archived.`);
+            expenses = [];
+            saveData();
+            updateUI();
+        }
+    });
+    document.getElementById('retainDataDeleteButton').addEventListener('click', () => {
+        if (expenses.length === 0) { alert("There are no entries to process."); return; }
+        if (confirm('This will clear all entries from the page but remember the category for each unique description. Are you sure?')) {
+            let descriptionCategoryMap = JSON.parse(localStorage.getItem('descriptionCategoryMap')) || {};
+            expenses.forEach(expense => { if (expense.description) { descriptionCategoryMap[expense.description.trim()] = expense.category; } });
+            localStorage.setItem('descriptionCategoryMap', JSON.stringify(descriptionCategoryMap));
+            expenses = [];
+            saveData(); 
+            updateUI(); 
+            alert("All entries cleared. Description-to-category mappings have been saved for future imports.");
+        }
+    });
+    document.getElementById('deleteAllButton').addEventListener('click', () => {
+        if (confirm('DANGER: Are you sure you want to permanently delete all expenses? This action CANNOT be undone and data will NOT be archived.')) {
+            expenses = [];
+            saveData();
+            updateUI();
+        }
+    });
+    document.getElementById('importButton').addEventListener('click', () => { document.getElementById('fileInput').click(); });
+    document.getElementById('fileInput').addEventListener('change', async function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        const descriptionCategoryMap = JSON.parse(localStorage.getItem('descriptionCategoryMap')) || {};
+        const reader = new FileReader();
+        reader.readAsText(file);
+        reader.onerror = () => { alert("Error reading file."); e.target.value = ''; };
+        reader.onload = async (event) => {
+            const csvData = event.target.result;
+            const allRows = csvData.split('\n').map(row => row.trim()).filter(row => row);
+            if (allRows.length < 2) { alert("CSV file is empty or has no header."); e.target.value = ''; return; }
+            const headerRow = allRows[0];
+            const dataRows = allRows.slice(1);
+            const headers = headerRow.split(',').map(h => h.replace(/"/g, '').trim());
+            const expectedHeaders = ['category', 'description', 'amount', 'date', 'odometer', 'fuel'];
+            const headerMatch = headers.every((h, i) => h.toLowerCase().includes(expectedHeaders[i]) || expectedHeaders.includes(h.toLowerCase()));
+            const parseRow = (row, mapping) => {
+                const columns = row.split(',').map(col => col.replace(/^"|"$/g, '').trim());
+                let category = mapping.category !== undefined ? columns[mapping.category] || 'Other' : 'Other';
+                const notes = mapping.notes !== undefined ? columns[mapping.notes] || '' : '';
+                const description = mapping.description !== undefined ? columns[mapping.description] || '' : '';
+                const amountStr = mapping.amount !== undefined ? columns[mapping.amount] || '0' : '0';
+                const date = mapping.date !== undefined ? columns[mapping.date] || new Date().toISOString().split('T')[0] : new Date().toISOString().split('T')[0];
+                const odometerMilesStr = mapping.odometer !== undefined ? columns[mapping.odometer] || '0' : '0';
+                const fuelGallonsStr = mapping.fuel !== undefined ? columns[mapping.fuel] || '0' : '0';
+                if (description && descriptionCategoryMap[description]) { category = descriptionCategoryMap[description]; }
+                const amount = parseFloat(amountStr);
+                if ((mapping.amount !== undefined && (isNaN(amount) || amount < 0)) || (mapping.date !== undefined && !date.match(/^\d{4}-\d{2}-\d{2}$/))) { return null; }
+                return { category, notes, description, amount: amount || 0, date, odometerMiles: parseFloat(odometerMilesStr) || 0, fuelGallons: parseFloat(fuelGallonsStr) || 0 };
+            };
+            let newEntries = [], potentialDuplicates = [], errorCount = 0;
+            if (headerMatch && !headers.map(h => h.toLowerCase()).includes('notes')) {
+                dataRows.forEach(row => {
+                    const entry = parseRow(row, { category: headers.findIndex(h => h.toLowerCase().includes('cat')), description: headers.findIndex(h => h.toLowerCase().includes('desc')), amount: headers.findIndex(h => h.toLowerCase().includes('amount') || h.toLowerCase().includes('cost')), date: headers.findIndex(h => h.toLowerCase().includes('date')), odometer: headers.findIndex(h => h.toLowerCase().includes('odo')), fuel: headers.findIndex(h => h.toLowerCase().includes('fuel')) });
+                    if (!entry) { errorCount++; return; }
+                    const isDuplicate = expenses.some(ex => ex.date === entry.date && ex.amount === entry.amount && ex.description === entry.description && ex.category === entry.category);
+                    if (isDuplicate) potentialDuplicates.push(entry); else newEntries.push(entry);
+                });
+            } else {
+                const mapping = await new Promise(resolve => showImportWizard(headers, dataRows[0], resolve));
+                if (!mapping) { alert("Import aborted."); e.target.value = ''; return; }
+                dataRows.forEach(row => {
+                    const entry = parseRow(row, mapping);
+                    if (!entry) { errorCount++; return; }
+                    const isDuplicate = expenses.some(ex => ex.date === entry.date && ex.amount === entry.amount && ex.description === entry.description && ex.category === entry.category && ex.notes === entry.notes);
+                    if (isDuplicate) potentialDuplicates.push(entry); else newEntries.push(entry);
+                });
+            }
+            let finalEntriesToAdd = [], skippedCount = 0;
+            if (potentialDuplicates.length > 0) {
+                const choice = await promptForDuplicateAction(`Found ${potentialDuplicates.length} entries that might already exist. How would you like to proceed?`);
+                if (choice === 'cancel') { alert("Import aborted."); e.target.value = ''; return; }
+                if (choice === 'add_all') finalEntriesToAdd = [...newEntries, ...potentialDuplicates];
+                if (choice === 'review') {
+                    finalEntriesToAdd = [...newEntries];
+                    for (const dup of potentialDuplicates) {
+                        if (confirm(`Potential Duplicate:\n\nDate: ${dup.date}\nCategory: ${dup.category}\nAmount: $${dup.amount.toFixed(2)}\nNotes: ${dup.notes || 'N/A'}\n\nAdd this entry? (Cancel to skip)`)) {
+                            finalEntriesToAdd.push(dup);
+                        } else skippedCount++;
+                    }
+                }
+            } else {
+                if (newEntries.length === 0) { alert(`No new entries to import. ${errorCount > 0 ? errorCount + ' rows had errors.' : ''}`); e.target.value = ''; return; }
+                if (confirm(`Add ${newEntries.length} new entries?`)) finalEntriesToAdd = newEntries;
+                else { alert("Import aborted."); e.target.value = ''; return; }
+            }
+            finalEntriesToAdd.forEach(entry => {
+                const hst = entry.amount - (entry.amount / 1.13);
+                const completeEntry = { id: Date.now() + Math.random(), category: entry.category, notes: entry.notes || '', description: entry.description, amount: entry.amount, hst: hst, date: entry.date, odometerMiles: entry.odometerMiles || 0, fuelGallons: entry.fuelGallons || 0, };
+                expenses.push(completeEntry);
+            });
+            if (finalEntriesToAdd.length > 0) { saveData(); updateUI(); }
+            alert(`Import Complete!\n\nAdded: ${finalEntriesToAdd.length}\nSkipped: ${skippedCount}\nErrors: ${errorCount}`);
+            e.target.value = '';
+        };
+    });
+    // --- Initialize ---
+    updateUI();
+    fetchCalcExchangeRate();
+    function populateDatalist() {
+		const datalist = document.getElementById('existingCategoriesDatalist');
+		const allCategories = new Set();
+		document.querySelectorAll('#expenseForm select#category option').forEach(option => { if (option.value) { allCategories.add(option.value); } });
+		expenses.forEach(exp => { allCategories.add(exp.category); });
+		datalist.innerHTML = '';
+		allCategories.forEach(category => { const optionElement = document.createElement('option'); optionElement.value = category; datalist.appendChild(optionElement); });
+	}
+    </script>
+</body>
+</html>

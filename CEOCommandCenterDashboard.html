@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CEO Command Center - 12 Month Plan</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .task-list li {
+            transition: all 0.2s ease-in-out;
+        }
+        .task-list input:checked + label {
+            text-decoration: line-through;
+            color: #6b7280;
+        }
+        .section-title {
+            border-bottom: 2px solid #374151;
+            padding-bottom: 8px;
+            margin-bottom: 16px;
+        }
+        details > summary {
+            cursor: pointer;
+            list-style: none;
+        }
+        details > summary::-webkit-details-marker {
+            display: none;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-100 p-4 sm:p-6 md:p-8">
+
+    <div class="max-w-5xl mx-auto">
+
+        <!-- Header -->
+        <header class="text-center mb-8">
+            <h1 class="text-3xl sm:text-4xl font-bold text-white">CEO Command Center</h1>
+            <p class="text-lg text-blue-400">Your 12-Month Real Estate Business Plan</p>
+        </header>
+
+        <!-- Daily CEO Scorecard -->
+        <section id="daily-scorecard" class="bg-gray-800 p-6 rounded-lg shadow-lg mb-8">
+            <h2 class="text-2xl font-bold text-white section-title">Today's CEO Scorecard</h2>
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 text-lg">
+                <div class="flex items-center">
+                    <input type="checkbox" id="task-workout" class="form-checkbox h-5 w-5 text-blue-500 bg-gray-700 border-gray-600 rounded focus:ring-blue-600">
+                    <label for="task-workout" class="ml-3 text-gray-200">Weight Training</label>
+                </div>
+                <div class="flex items-center">
+                    <input type="checkbox" id="task-walk" class="form-checkbox h-5 w-5 text-blue-500 bg-gray-700 border-gray-600 rounded focus:ring-blue-600">
+                    <label for="task-walk" class="ml-3 text-gray-200">5km Walk</label>
+                </div>
+                <div class="flex items-center">
+                    <input type="checkbox" id="task-nutrition" class="form-checkbox h-5 w-5 text-blue-500 bg-gray-700 border-gray-600 rounded focus:ring-blue-600">
+                    <label for="task-nutrition" class="ml-3 text-gray-200">On-Plan Nutrition</label>
+                </div>
+                <div class="flex items-center">
+                    <input type="checkbox" id="task-no-alcohol" class="form-checkbox h-5 w-5 text-blue-500 bg-gray-700 border-gray-600 rounded focus:ring-blue-600">
+                    <label for="task-no-alcohol" class="ml-3 text-gray-200">No Alcohol</label>
+                </div>
+            </div>
+            <div class="mt-6">
+                <label for="daily-notes" class="block text-lg font-medium text-gray-300 mb-2">Today's Wins & Notes:</label>
+                <textarea id="daily-notes" rows="3" class="w-full bg-gray-700 text-gray-200 border border-gray-600 rounded-md p-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"></textarea>
+            </div>
+        </section>
+
+        <!-- Full Year Plan -->
+        <section class="bg-gray-800 p-6 rounded-lg shadow-lg mb-8">
+            <h2 class="text-2xl font-bold text-white section-title">The 12-Month Plan</h2>
+            
+            <details class="mb-4" open>
+                <summary class="text-xl font-semibold text-blue-300 mb-3 flex justify-between items-center">
+                    <span>Season 1: August Pre-Season (Aug 8 - Aug 31)</span>
+                    <span class="text-sm text-gray-400">▼</span>
+                </summary>
+                <div class="pl-4 border-l-2 border-gray-700 mt-2">
+                    <h4 class="font-bold mb-2">Focus: Foundation, Knowledge & Confidence Building</h4>
+                    <ul class="task-list list-disc list-inside space-y-2">
+                        <li><input type="checkbox" id="w1-t1"><label for="w1-t1" class="ml-2">Commit to and pay for the Lofty CRM plan for Sept 1st.</label></li>
+                        <li><input type="checkbox" id="w1-t2"><label for="w1-t2" class="ml-2">Watch 5 hours of Lofty CRM training videos.</label></li>
+                        <li><input type="checkbox" id="w1-t3"><label for="w1-t3" class="ml-2">Study BRA, Listing Agreement, and APS forms.</label></li>
+                        <li><input type="checkbox" id="w1-t4"><label for="w1-t4" class="ml-2">Create professional social media profiles & Google Business Profile.</label></li>
+                        <li><input type="checkbox" id="w1-t5"><label for="w1-t5" class="ml-2">Film first two videos; script next three.</label></li>
+                        <li><input type="checkbox" id="w1-t6"><label for="w1-t6" class="ml-2">Contact mentor to schedule "Open House Shadowing".</label></li>
+                    </ul>
+                </div>
+            </details>
+
+            <details class="mb-4">
+                <summary class="text-xl font-semibold text-green-300 mb-3 flex justify-between items-center">
+                    <span>Season 2: Q4 Super-Sprint (Sept 1 - Jan 31)</span>
+                    <span class="text-sm text-gray-400">▼</span>
+                </summary>
+                <div class="pl-4 border-l-2 border-gray-700 mt-2">
+                    <h4 class="font-bold mb-2">Focus: Massive Action, Lead Generation & First Closings (Goal: 5-7 Deals)</h4>
+                    <ul class="task-list list-disc list-inside space-y-2">
+                        <li><input type="checkbox" id="s2-t1"><label for="s2-t1" class="ml-2">Host 8+ Open Houses per month.</label></li>
+                        <li><input type="checkbox" id="s2-t2"><label for="s2-t2" class="ml-2">Add 20+ new contacts to Lofty CRM per week.</label></li>
+                        <li><input type="checkbox" id="s2-t3"><label for="s2-t3" class="ml-2">Publish one new video per week, consistently.</label></li>
+                        <li><input type="checkbox" id="s2-t4"><label for="s2-t4" class="ml-2">Secure first 2 Buyer Representation Agreements.</label></li>
+                        <li><input type="checkbox" id="s2-t5"><label for="s2-t5" class="ml-2">Secure first Listing Agreement.</label></li>
+                        <li><input type="checkbox" id="s2-t6"><label for="s2-t6" class="ml-2">Close first transaction.</label></li>
+                        <li><input type="checkbox" id="s2-t7"><label for="s2-t7" class="ml-2">Establish referral partnership with mentor for vacation coverage.</label></li>
+                    </ul>
+                </div>
+            </details>
+            
+            <details class="mb-4">
+                <summary class="text-xl font-semibold text-yellow-300 mb-3 flex justify-between items-center">
+                    <span>Season 3: Active Recharge (Feb 1 - Apr 15)</span>
+                    <span class="text-sm text-gray-400">▼</span>
+                </summary>
+                <div class="pl-4 border-l-2 border-gray-700 mt-2">
+                    <h4 class="font-bold mb-2">Focus: Remote Pipeline Nurturing & Strategic Planning</h4>
+                    <ul class="task-list list-disc list-inside space-y-2">
+                        <li><input type="checkbox" id="s3-t1"><label for="s3-t1" class="ml-2">Execute 1 hour of remote lead follow-up daily via Lofty.</label></li>
+                        <li><input type="checkbox" id="s3-t2"><label for="s3-t2" class="ml-2">Schedule and send weekly automated market updates from Lofty.</label></li>
+                        <li><input type="checkbox" id="s3-t3"><label for="s3-t3" class="ml-2">Script and plan video content for the Spring Market.</label></li>
+                        <li><input type="checkbox" id="s3-t4"><label for="s3-t4" class="ml-2">Coordinate with mentor on any active client needs.</label></li>
+                    </ul>
+                </div>
+            </details>
+
+            <details>
+                <summary class="text-xl font-semibold text-red-300 mb-3 flex justify-between items-center">
+                    <span>Season 4: Spring Market Ramp-Up (Apr 16 - Jul 31)</span>
+                    <span class="text-sm text-gray-400">▼</span>
+                </summary>
+                <div class="pl-4 border-l-2 border-gray-700 mt-2">
+                    <h4 class="font-bold mb-2">Focus: Peak Season Execution & Business Scaling (Goal: 8-10 Deals)</h4>
+                    <ul class="task-list list-disc list-inside space-y-2">
+                        <li><input type="checkbox" id="s4-t1"><label for="s4-t1" class="ml-2">Launch major Spring lead generation campaign (e.g., "First-Time Buyer" webinar).</label></li>
+                        <li><input type="checkbox" id="s4-t2"><label for="s4-t2" class="ml-2">Increase video production to two videos per week.</label></li>
+                        <li><input type="checkbox" id="s4-t3"><label for="s4-t3" class="ml-2">Host one client appreciation event or initiative.</label></li>
+                        <li><input type="checkbox" id="s4-t4"><label for="s4-t4" class="ml-2">Ask for 5+ online reviews from past clients.</label></li>
+                        <li><input type="checkbox" id="s4-t5"><label for="s4-t5" class="ml-2">Review mid-year P&L and adjust budget for Q4.</label></li>
+                    </ul>
+                </div>
+            </details>
+
+        </section>
+
+        <!-- Data Management -->
+        <section class="bg-gray-800 p-6 rounded-lg shadow-lg">
+            <h2 class="text-2xl font-bold text-white section-title">Data Management</h2>
+            <div class="flex flex-wrap gap-4">
+                <button id="export-json" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition duration-300">Export to JSON</button>
+                <button id="export-csv" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded transition duration-300">Export to CSV</button>
+                <label class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded transition duration-300 cursor-pointer">
+                    Import from JSON
+                    <input type="file" id="import-json" class="hidden" accept=".json">
+                </label>
+                 <label class="bg-orange-600 hover:bg-orange-700 text-white font-bold py-2 px-4 rounded transition duration-300 cursor-pointer">
+                    Import from CSV
+                    <input type="file" id="import-csv" class="hidden" accept=".csv">
+                </label>
+                 <button id="reset-data" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded transition duration-300">Reset All Data</button>
+            </div>
+        </section>
+
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const allInputs = document.querySelectorAll('input[type="checkbox"], textarea');
+            const storageKey = 'ceoDashboardData_v2'; // Updated key for new structure
+
+            // Load data from localStorage
+            function loadData() {
+                const data = JSON.parse(localStorage.getItem(storageKey));
+                if (data) {
+                    allInputs.forEach(input => {
+                        if (data[input.id]) {
+                            if (input.type === 'checkbox') {
+                                input.checked = data[input.id];
+                            } else {
+                                input.value = data[input.id];
+                            }
+                        } else {
+                             if (input.type === 'checkbox') {
+                                input.checked = false;
+                            } else {
+                                input.value = '';
+                            }
+                        }
+                    });
+                }
+            }
+
+            // Save data to localStorage
+            function saveData() {
+                const data = {};
+                allInputs.forEach(input => {
+                    if (input.type === 'checkbox') {
+                        data[input.id] = input.checked;
+                    } else {
+                        data[input.id] = input.value;
+                    }
+                });
+                localStorage.setItem(storageKey, JSON.stringify(data));
+            }
+
+            // Add event listeners to all inputs
+            allInputs.forEach(input => {
+                input.addEventListener('change', saveData);
+                if (input.type === 'textarea') {
+                    input.addEventListener('keyup', saveData);
+                }
+            });
+
+            // Export to JSON
+            document.getElementById('export-json').addEventListener('click', () => {
+                const dataStr = localStorage.getItem(storageKey);
+                if(!dataStr) { alert('No data to export!'); return; }
+                const dataBlob = new Blob([dataStr], { type: 'application/json' });
+                const url = URL.createObjectURL(dataBlob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `ceo_dashboard_backup_${new Date().toISOString().slice(0,10)}.json`;
+                a.click();
+                URL.revokeObjectURL(url);
+            });
+            
+            // Export to CSV
+            document.getElementById('export-csv').addEventListener('click', () => {
+                const data = JSON.parse(localStorage.getItem(storageKey));
+                if (!data) { alert('No data to export!'); return; }
+                let csvContent = 'data:text/csv;charset=utf-8,';
+                csvContent += 'ID,Type,Value\n';
+                Object.keys(data).forEach(key => {
+                    const input = document.getElementById(key);
+                    const type = input ? input.type : 'textarea';
+                    const value = JSON.stringify(data[key]).replace(/,/g, ''); // Basic sanitation for CSV
+                    csvContent += `${key},${type},${value}\n`;
+                });
+                const encodedUri = encodeURI(csvContent);
+                const link = document.createElement('a');
+                link.setAttribute('href', encodedUri);
+                link.setAttribute('download', `ceo_dashboard_backup_${new Date().toISOString().slice(0,10)}.csv`);
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            });
+
+            // Import from JSON
+            document.getElementById('import-json').addEventListener('change', (event) => {
+                const file = event.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        try {
+                            JSON.parse(e.target.result); // Validate JSON
+                            localStorage.setItem(storageKey, e.target.result);
+                            loadData();
+                            alert('Data imported successfully!');
+                        } catch (error) {
+                            alert('Error importing file. Please ensure it is a valid JSON backup.');
+                        }
+                    };
+                    reader.readAsText(file);
+                }
+            });
+
+            // Import from CSV
+            document.getElementById('import-csv').addEventListener('change', (event) => {
+                const file = event.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        try {
+                            const lines = e.target.result.split('\n').filter(line => line);
+                            if (lines.length < 2 || lines[0].trim() !== 'ID,Type,Value') {
+                                throw new Error('Invalid CSV format or header.');
+                            }
+                            const importedData = {};
+                            for (let i = 1; i < lines.length; i++) {
+                                const parts = lines[i].split(',');
+                                const id = parts[0];
+                                const type = parts[1];
+                                let value = parts.slice(2).join(','); // Re-join value in case it contained commas
+
+                                // Un-stringify the value
+                                try {
+                                    value = JSON.parse(value);
+                                } catch {
+                                    // Keep as string if parsing fails
+                                }
+
+                                if(id) importedData[id] = value;
+                            }
+                            localStorage.setItem(storageKey, JSON.stringify(importedData));
+                            loadData();
+                            alert('Data imported successfully from CSV!');
+                        } catch (error) {
+                            alert('Error importing file: ' + error.message);
+                        }
+                    };
+                    reader.readAsText(file);
+                }
+            });
+            
+            // Reset Data
+            document.getElementById('reset-data').addEventListener('click', () => {
+                if (confirm('Are you sure you want to reset all data? This cannot be undone.')) {
+                    localStorage.removeItem(storageKey);
+                    allInputs.forEach(input => {
+                        if (input.type === 'checkbox') {
+                            input.checked = false;
+                        } else {
+                            input.value = '';
+                        }
+                    });
+                     alert('All data has been reset.');
+                }
+            });
+
+            // Initial load
+            loadData();
+        });
+    </script>
+</body>
+</html>

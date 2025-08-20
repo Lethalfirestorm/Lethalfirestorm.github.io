@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Personal Dashboard</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <script src="https://unpkg.com/feather-icons"></script>
+    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+
+
+    <style>
+        :root {
+            --bg-color: #f0f2f5;
+            --card-bg: #ffffff;
+            --text-color: #1c1e21;
+            --subtle-text: #606770;
+            --primary-color: #007bff;
+            --secondary-color: #6c757d;
+            --success-color: #28a745;
+            --danger-color: #dc3545;
+            --warning-color: #ffc107;
+            --border-color: #dee2e6;
+            --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            --border-radius: 12px;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 24px;
+            font-size: 16px;
+            line-height: 1.6;
+        }
+
+        h1, h2, h3 {
+            margin-top: 0;
+            font-weight: 700;
+        }
+        
+        h2 {
+            font-size: 1.75rem;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .dashboard-container {
+            max-width: 1600px;
+            margin: auto;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            background: linear-gradient(45deg, var(--primary-color), #00bfff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 24px;
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            padding: 24px;
+            border: 1px solid var(--border-color);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+        }
+        
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 20px;
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: 500;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+        }
+
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+            font-size: 1rem;
+        }
+        
+        .input-group {
+            display: flex;
+        }
+        
+        .input-group span {
+            padding: 10px 12px;
+            background-color: #e9ecef;
+            border: 1px solid var(--border-color);
+            border-right: none;
+            border-radius: 8px 0 0 8px;
+        }
+        
+        .input-group input {
+            border-radius: 0 8px 8px 0;
+        }
+
+        .btn {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            width: 100%;
+            transition: background-color 0.2s ease;
+            font-size: 1rem;
+        }
+
+        .btn:hover {
+            background-color: #0056b3;
+        }
+        
+        .btn-secondary {
+            background-color: var(--secondary-color);
+        }
+        .btn-secondary:hover {
+            background-color: #5a6268;
+        }
+        
+        .btn-small {
+            padding: 8px 12px;
+            font-size: 0.9rem;
+            width: auto;
+        }
+
+        .results-box {
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            padding: 16px;
+            margin-top: 20px;
+            border: 1px solid var(--border-color);
+        }
+        
+        .results-box h4 {
+            margin-top: 0;
+            margin-bottom: 12px;
+        }
+
+        .results-box p {
+            margin: 8px 0;
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .results-box p span:last-child {
+            font-weight: 600;
+        }
+
+        /* --- Stock Ticker Styles --- */
+        #stock-container {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+        .stock-item {
+            padding: 16px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+        }
+        .stock-item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        .stock-info { font-size: 1.2rem; font-weight: 700; flex-grow: 1; }
+        .stock-price-usd { font-size: 1.2rem; font-weight: 700; }
+        .price-up { color: var(--success-color); }
+        .price-down { color: var(--danger-color); }
+        .price-change { font-size: 0.9rem; margin-left: 8px; }
+        .stock-item-details {
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            padding: 12px;
+            font-size: 0.9rem;
+        }
+        .stock-item-details p {
+            margin: 4px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .shares-input {
+            width: 70px;
+            text-align: right;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            padding: 4px 6px;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.9rem;
+        }
+        .delete-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 4px;
+            color: var(--subtle-text);
+        }
+        .delete-btn:hover {
+            color: var(--danger-color);
+        }
+        .add-stock-form {
+            margin-top: 20px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        .add-stock-form button {
+            grid-column: 1 / -1; /* Span across both columns */
+        }
+
+        /* --- Chart Styles --- */
+        .chart-container {
+            position: relative;
+            height: 160px; /* Increased height for x-axis */
+            margin-top: 16px;
+            margin-bottom: 8px;
+        }
+        .chart-controls {
+            display: flex;
+            gap: 6px;
+            justify-content: center;
+            margin-bottom: 12px;
+            flex-wrap: wrap; /* Allow buttons to wrap on smaller screens */
+        }
+        .chart-controls button {
+            background-color: #e9ecef;
+            color: var(--subtle-text);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 4px 10px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            font-weight: 500;
+        }
+        .chart-controls button.active {
+            background-color: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            body { padding: 16px; }
+            .grid-container {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="dashboard-container">
+        <header class="header">
+            <h1>Your Personal Dashboard</h1>
+            <p style="color: var(--subtle-text);">A custom utility hub for your real estate and personal needs.</p>
+        </header>
+
+        <section>
+            <h2><i data-feather="dollar-sign"></i>Finance & Real Estate</h2>
+            <div class="grid-container">
+
+                <div class="card">
+                    <div class="card-header"><i data-feather="trending-up"></i>Stock Portfolio</div>
+                    <div id="stock-container"></div>
+                    <div class="add-stock-form">
+                        <input type="text" id="new-stock-symbol" placeholder="Stock Symbol (e.g., AAPL)">
+                        <input type="number" id="new-stock-shares" placeholder="# of Shares">
+                        <button class="btn" onclick="addStock()">Add Stock</button>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header"><i data-feather="credit-card"></i>Secured Line of Credit</div>
+                    <div class="form-group"><label for="loan-amount">Loan Amount</label><div class="input-group"><span>$</span><input type="number" id="loan-amount" placeholder="100000"></div></div>
+                    <div class="form-group"><label for="interest-rate-heloc">Annual Interest Rate</label><div class="input-group"><input type="number" id="interest-rate-heloc" placeholder="7.95"><span>%</span></div></div>
+                    <button class="btn btn-secondary btn-small" style="margin-bottom: 10px;" onclick="setPrimeRate()">Use Prime + 1%</button>
+                    <button class="btn" onclick="calculateHELOC()">Calculate Interest-Only Payment</button>
+                    <div id="heloc-results" class="results-box" style="display: none;"><h4>Payment Summary</h4><p><span>Monthly Interest Payment:</span> <span id="monthly-interest-payment"></span></p></div>
+                </div>
+            </div>
+        </section>
+        
+        <section style="margin-top: 40px;">
+            <h2><i data-feather="compass"></i>Hobbies & Utilities</h2>
+            <div class="grid-container">
+
+                <div class="card">
+                    <div class="card-header"><i data-feather="sun"></i>Local Info (Hamilton, ON)</div>
+                    <div style="text-align: center; font-size: 4rem; margin-bottom: 1rem;">☀️</div>
+                    <p style="text-align: center; font-size: 1.5rem; font-weight: 600;">Clear, 22°C</p>
+                    <div class="results-box" style="margin-top: 1rem;">
+                        <p><span>Sunrise:</span> <span>6:15 AM</span></p>
+                        <p><span>Sunset:</span> <span>8:45 PM</span></p>
+                        <hr style="border: none; border-top: 1px solid var(--border-color); margin: 12px 0;">
+                        <p style="flex-direction: column; align-items: flex-start;">
+                            <span style="font-weight: 600; margin-bottom: 4px;">Photography Tip:</span>
+                            <span style="font-weight: 400;">Bright sun can create harsh shadows. Try shooting during the 'golden hour' near sunrise or sunset for softer, warmer light.</span>
+                        </p>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header"><i data-feather="wind"></i>Drone Flying Conditions</div>
+                    <div style="text-align: center; font-size: 4rem; margin-bottom: 1rem;">💨</div>
+                    <p style="text-align: center; font-size: 1.5rem; font-weight: 600;">Wind: 12 km/h</p>
+                    <div class="results-box" style="margin-top: 1rem; text-align: center; background-color: #fffbe6; border-color: var(--warning-color);">
+                        <p style="justify-content: center; font-weight: 600; color: #856404;">Fly with caution. Moderate wind may affect smaller drones.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </div>
+
+    <script>
+        // --- INITIALIZATION ---
+        document.addEventListener('DOMContentLoaded', () => {
+            feather.replace();
+            initializeStocks();
+            setInterval(updateStockPrices, 60000); // Update prices every 60 seconds
+        });
+
+        // --- CONFIGURATION ---
+        const USD_TO_CAD_RATE = 1.37;
+        const CANADA_PRIME_RATE = 4.95;
+
+        // --- STOCK TRACKER ---
+        let stocks = [];
+        let stockCharts = {}; // Object to hold chart instances
+        const defaultStocks = [
+            { symbol: 'NVDA', price: 890.50, change: 12.45, shares: 20 },
+            { symbol: 'NCLH', price: 24.66, change: 0.36, shares: 100 }
+        ];
+
+        function saveStocks() {
+            localStorage.setItem('myStocks', JSON.stringify(stocks));
+        }
+
+        function initializeStocks() {
+            const savedStocks = localStorage.getItem('myStocks');
+            stocks = savedStocks ? JSON.parse(savedStocks) : defaultStocks;
+            
+            const container = document.getElementById('stock-container');
+            container.innerHTML = '';
+            stocks.forEach(stock => {
+                const stockElement = createStockElement(stock);
+                container.appendChild(stockElement);
+                // Render the initial chart after the element is in the DOM
+                setTimeout(() => renderStockChart(stock.symbol, 1), 0);
+            });
+            
+            if (!savedStocks) {
+                saveStocks(); // Save defaults if nothing is stored yet
+            }
+        }
+
+        function createStockElement(stock) {
+            const item = document.createElement('div');
+            item.className = 'stock-item';
+            item.id = `stock-${stock.symbol}`;
+            updateStockElementContent(item, stock);
+            return item;
+        }
+
+        function updateStockElementContent(element, stock) {
+            const changeClass = stock.change >= 0 ? 'price-up' : 'price-down';
+            const sign = stock.change >= 0 ? '+' : '';
+            const totalValueUSD = stock.price * stock.shares;
+            const priceCAD = stock.price * USD_TO_CAD_RATE;
+            const totalValueCAD = totalValueUSD * USD_TO_CAD_RATE;
+            const ytdDays = getYTDays();
+
+            element.innerHTML = `
+                <div class="stock-item-header">
+                    <div class="stock-info">${stock.symbol}</div>
+                    <button class="delete-btn" onclick="deleteStock('${stock.symbol}')"><i data-feather="x-circle"></i></button>
+                    <div class="stock-price-usd ${changeClass}">
+                        <span>$${stock.price.toFixed(2)} USD</span>
+                        <span class="price-change">(${sign}${stock.change.toFixed(2)})</span>
+                    </div>
+                </div>
+                
+                <div class="chart-container">
+                    <canvas id="chart-${stock.symbol}"></canvas>
+                </div>
+                <div class="chart-controls" id="controls-${stock.symbol}">
+                    <button class="active" onclick="renderStockChart('${stock.symbol}', 1, this)">1D</button>
+                    <button onclick="renderStockChart('${stock.symbol}', 5, this)">5D</button>
+                    <button onclick="renderStockChart('${stock.symbol}', 30, this)">1M</button>
+                    <button onclick="renderStockChart('${stock.symbol}', 90, this)">3M</button>
+                    <button onclick="renderStockChart('${stock.symbol}', ${ytdDays}, this)">YTD</button>
+                    <button onclick="renderStockChart('${stock.symbol}', 365, this)">1Y</button>
+                    <button onclick="renderStockChart('${stock.symbol}', ${365*3}, this)">3Y</button>
+                    <button onclick="renderStockChart('${stock.symbol}', ${365*5}, this)">5Y</button>
+                </div>
+
+                <div class="stock-item-details">
+                    <p>
+                        <span>Shares:</span> 
+                         <input type="number" class="shares-input" value="${stock.shares}" onchange="updateShares('${stock.symbol}', this.value)">
+                    </p>
+                    <p><span>Price (CAD):</span> <span>$${priceCAD.toFixed(2)} CAD</span></p>
+                    <hr style="border: none; border-top: 1px solid var(--border-color); margin: 6px 0;">
+                    <p><span>Value (USD):</span> <strong>$${totalValueUSD.toFixed(2)}</strong></p>
+                    <p><span>Value (CAD):</span> <strong>$${totalValueCAD.toFixed(2)}</strong></p>
+                </div>
+            `;
+            feather.replace(); // Re-run Feather to draw the new delete icon
+        }
+        
+        function updateShares(symbol, newShares) {
+            const stock = stocks.find(s => s.symbol === symbol);
+            if (stock) {
+                stock.shares = parseFloat(newShares) || 0;
+                const element = document.getElementById(`stock-${stock.symbol}`);
+                const activeBtn = element.querySelector('.chart-controls button.active');
+                
+                updateStockElementContent(element, stock); // This redraws everything, including buttons
+                
+                // Re-find the active button by text and re-render the chart
+                const newActiveBtn = Array.from(element.querySelectorAll('.chart-controls button')).find(btn => btn.innerText === activeBtn.innerText);
+                if (newActiveBtn) {
+                    newActiveBtn.click(); // Simulate a click to re-render the correct chart
+                }
+                
+                saveStocks(); // Save changes to local storage
+            }
+        }
+
+        function addStock() {
+            const symbolInput = document.getElementById('new-stock-symbol');
+            const sharesInput = document.getElementById('new-stock-shares');
+            const symbol = symbolInput.value.toUpperCase().trim();
+            const shares = parseFloat(sharesInput.value);
+
+            if (symbol && shares > 0 && !stocks.some(s => s.symbol === symbol)) {
+                // Mock fetching initial price
+                const newStock = { 
+                    symbol, 
+                    shares,
+                    price: (Math.random() * 800 + 50), // Random price between 50 and 850
+                    change: (Math.random() * 10 - 5) 
+                 };
+                stocks.push(newStock);
+                saveStocks();
+
+                const stockElement = createStockElement(newStock);
+                document.getElementById('stock-container').appendChild(stockElement);
+                setTimeout(() => renderStockChart(newStock.symbol, 1), 0);
+                
+                symbolInput.value = '';
+                sharesInput.value = '';
+            } else {
+                alert("Please enter a valid, unique stock symbol and number of shares.");
+            }
+        }
+        
+        function deleteStock(symbol) {
+            // Destroy the chart instance before removing the element
+            if (stockCharts[symbol]) {
+                stockCharts[symbol].destroy();
+                delete stockCharts[symbol];
+            }
+            stocks = stocks.filter(s => s.symbol !== symbol);
+            saveStocks();
+            initializeStocks(); // Re-render the entire list
+        }
+        
+        function updateStockPrices() {
+            stocks.forEach(stock => {
+                const element = document.getElementById(`stock-${stock.symbol}`);
+                if (element) {
+                    const randomChange = (Math.random() * stock.price * 0.01) - (stock.price * 0.005);
+                    stock.price += randomChange;
+                    stock.change = randomChange;
+
+                    const activeBtn = element.querySelector('.chart-controls button.active');
+                    updateStockElementContent(element, stock);
+                    
+                    const newActiveBtn = Array.from(element.querySelectorAll('.chart-controls button')).find(btn => btn.innerText === activeBtn.innerText);
+                    if (newActiveBtn) newActiveBtn.click();
+                }
+            });
+        }
+
+        // --- Charting Functions ---
+        function getYTDays() {
+            const now = new Date();
+            const start = new Date(now.getFullYear(), 0, 1);
+            const diff = now - start;
+            const oneDay = 1000 * 60 * 60 * 24;
+            return Math.floor(diff / oneDay);
+        }
+
+        function generateChartData(days, lastPrice) {
+            const data = [];
+            const today = new Date();
+            let currentPrice = lastPrice;
+
+            for (let i = 0; i < days; i++) {
+                let date;
+                // For 1-day chart, generate points every 10 minutes for the past few hours
+                if (days === 1) {
+                    const points = 40; // ~6.5 hours of data
+                    date = new Date(today.getTime() - (points - i) * 10 * 60 * 1000);
+                } else {
+                    date = new Date(today.getTime() - (days - 1 - i) * 24 * 60 * 60 * 1000);
+                }
+                
+                data.push({ x: date, y: currentPrice });
+                
+                const volatility = 0.05; 
+                const change = (Math.random() * currentPrice * volatility) - (currentPrice * volatility / 2);
+                currentPrice -= change;
+                if (currentPrice < 0) currentPrice = 5; // prevent negative prices
+            }
+            // Ensure the last point is the actual current price
+            data[data.length - 1].y = lastPrice;
+            return data;
+        }
+
+        function renderStockChart(symbol, days, btnElement) {
+            if (btnElement) {
+                const controls = btnElement.parentElement;
+                controls.querySelectorAll('button').forEach(btn => btn.classList.remove('active'));
+                btnElement.classList.add('active');
+            }
+
+            const stock = stocks.find(s => s.symbol === symbol);
+            if (!stock) return;
+
+            const ctx = document.getElementById(`chart-${symbol}`);
+            if (!ctx) return; 
+
+            if (stockCharts[symbol]) {
+                stockCharts[symbol].destroy();
+            }
+
+            const chartData = generateChartData(days, stock.price);
+            const firstVal = chartData[0].y;
+            const lastVal = chartData[chartData.length - 1].y;
+            const borderColor = lastVal >= firstVal ? 'rgba(40, 167, 69, 1)' : 'rgba(220, 53, 69, 1)';
+            const backgroundColor = lastVal >= firstVal ? 'rgba(40, 167, 69, 0.1)' : 'rgba(220, 53, 69, 0.1)';
+            
+            let unit = 'day';
+            if (days <= 1) unit = 'hour';
+            if (days > 365 * 2) unit = 'year';
+            else if (days > 90) unit = 'month';
+
+            stockCharts[symbol] = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    datasets: [{
+                        data: chartData,
+                        borderColor: borderColor,
+                        backgroundColor: backgroundColor,
+                        borderWidth: 2,
+                        fill: true,
+                        pointRadius: 0,
+                        tension: 0.3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        intersect: false,
+                        mode: 'index',
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            enabled: true,
+                            callbacks: {
+                                label: (context) => `$${context.parsed.y.toFixed(2)}`
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            type: 'time',
+                            time: { unit: unit },
+                            grid: { display: false },
+                            ticks: {
+                                font: { size: 10 },
+                                maxRotation: 0,
+                                autoSkip: true,
+                            }
+                        },
+                        y: { display: false }
+                    }
+                }
+            });
+        }
+
+
+        // --- FINANCIAL CALCULATORS ---
+        function setPrimeRate() {
+            document.getElementById('interest-rate-heloc').value = (CANADA_PRIME_RATE + 1).toFixed(2);
+        }
+
+        function calculateHELOC() {
+            const loanAmount = parseFloat(document.getElementById('loan-amount').value);
+            const interestRate = parseFloat(document.getElementById('interest-rate-heloc').value) / 100;
+            if (isNaN(loanAmount) || isNaN(interestRate)) return;
+            const monthlyInterestPayment = (loanAmount * interestRate) / 12;
+            document.getElementById('monthly-interest-payment').textContent = `$${monthlyInterestPayment.toFixed(2)}`;
+            document.getElementById('heloc-results').style.display = 'block';
+        }
+
+    </script>
+</body>
+</html>

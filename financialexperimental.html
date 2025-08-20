@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Comprehensive Financial Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root { --bg-gray-900: #111827; --bg-gray-800: #1F2937; --bg-gray-700: #374151; --text-gray-200: #E5E7EB; --accent-blue: #3B82F6; --success-color: #28a745; --danger-color: #dc3545; }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: var(--bg-gray-900); }
+        ::-webkit-scrollbar-thumb { background: var(--bg-gray-700); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #4B5563; }
+        .calendar-day { transition: all 0.2s ease-in-out; position: relative; }
+        .calendar-day:hover { transform: scale(1.05); background-color: var(--bg-gray-700); }
+        .calendar-day.selected { background-color: var(--accent-blue); color: white; transform: scale(1.1); box-shadow: 0 0 15px rgba(59, 130, 246, 0.5); }
+        .has-event::after { content: ''; position: absolute; bottom: 4px; left: 50%; transform: translateX(-50%); width: 6px; height: 6px; border-radius: 50%; background-color: #34D399; }
+        .form-input { margin-bottom: 0.75rem; }
+
+        /* --- Stock Ticker Styles (Adapted for Dark Theme) --- */
+        #stock-container { display: flex; flex-direction: column; gap: 16px; }
+        .stock-item { padding: 16px; border: 1px solid var(--bg-gray-700); border-radius: 8px; background-color: var(--bg-gray-900); }
+        .stock-item-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+        .stock-info { font-size: 1.2rem; font-weight: 700; flex-grow: 1; color: var(--text-gray-200); }
+        .stock-price-usd { font-size: 1.2rem; font-weight: 700; }
+        .price-up { color: var(--success-color); }
+        .price-down { color: var(--danger-color); }
+        .price-change { font-size: 0.9rem; margin-left: 8px; }
+        .stock-item-details { background-color: var(--bg-gray-700); border-radius: 8px; padding: 12px; font-size: 0.9rem; }
+        .stock-item-details p { margin: 4px 0; display: flex; justify-content: space-between; align-items: center; }
+        .shares-input { width: 70px; text-align: right; border: 1px solid #4B5563; border-radius: 4px; padding: 4px 6px; background-color: var(--bg-gray-800); color: var(--text-gray-200); }
+        .delete-btn { background: none; border: none; cursor: pointer; padding: 4px; color: #9CA3AF; }
+        .delete-btn:hover { color: var(--danger-color); }
+        .add-stock-form { margin-top: 20px; display: grid; grid-template-columns: 1fr auto; gap: 10px; }
+        .add-stock-form button { grid-column: 1 / -1; }
+        .chart-container { position: relative; height: 160px; margin-top: 16px; margin-bottom: 8px; }
+        .chart-controls { display: flex; gap: 6px; justify-content: center; margin-bottom: 12px; flex-wrap: wrap; }
+        .chart-controls button { background-color: var(--bg-gray-700); color: var(--text-gray-200); border: 1px solid #4B5563; border-radius: 12px; padding: 4px 10px; font-size: 0.8rem; cursor: pointer; font-weight: 500; }
+        .chart-controls button.active { background-color: var(--accent-blue); color: white; border-color: var(--accent-blue); }
+    </style>
+</head>
+<body class="bg-bg-gray-900 text-text-gray-200 font-sans antialiased">
+    <div class="container mx-auto p-4 lg:p-6">
+        <header class="mb-6">
+            <div class="flex flex-wrap justify-between items-center mb-4">
+                <h1 class="text-3xl md:text-4xl font-bold text-white">Financial Dashboard</h1>
+                <div class="flex items-center space-x-2 mt-4 sm:mt-0">
+                    <button id="exportJsonBtn" title="Export Data to JSON" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition duration-300 flex items-center"><i class="fas fa-file-code mr-2"></i>Export</button>
+                    <label for="importJsonInput" title="Import Data from JSON" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-lg transition duration-300 cursor-pointer flex items-center"><i class="fas fa-file-import mr-2"></i>Import</label>
+                    <input type="file" id="importJsonInput" class="hidden" accept=".json">
+                </div>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="bg-bg-gray-800 p-4 rounded-xl shadow-lg text-center">
+                    <h2 class="text-md font-semibold text-gray-400">Net Worth</h2>
+                    <p id="netWorth" class="text-3xl font-bold text-green-400">$0.00</p>
+                </div>
+                <div class="bg-bg-gray-800 p-4 rounded-xl shadow-lg text-center">
+                    <h2 class="text-md font-semibold text-gray-400">Total Assets</h2>
+                    <p id="totalAssets" class="text-3xl font-bold text-blue-400">$0.00</p>
+                </div>
+                <div class="bg-bg-gray-800 p-4 rounded-xl shadow-lg text-center">
+                    <h2 class="text-md font-semibold text-gray-400">Total Liabilities</h2>
+                    <p id="totalLiabilities" class="text-3xl font-bold text-red-400">$0.00</p>
+                </div>
+            </div>
+        </header>
+
+        <main class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="lg:col-span-2 space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="bg-bg-gray-800 p-5 rounded-xl shadow-lg">
+                        <h3 class="text-xl font-bold mb-4 flex items-center"><i class="fas fa-wallet mr-3 text-blue-400"></i>Financial Assets</h3>
+                        <form id="addAssetForm" class="mb-4">
+                            <input type="text" id="asset-name" placeholder="Asset Name (e.g., Checking)" class="form-input w-full bg-bg-gray-700 border border-gray-600 rounded-lg px-4 py-2" required>
+                            <input type="number" id="asset-value" placeholder="Current Value" step="0.01" class="form-input w-full bg-bg-gray-700 border border-gray-600 rounded-lg px-4 py-2" required>
+                            <select id="asset-type" class="form-input w-full bg-bg-gray-700 border border-gray-600 rounded-lg px-4 py-2">
+                                <option value="Bank Account">Bank Account</option><option value="Investment">Investment</option><option value="Property">Property</option><option value="Other">Other</option>
+                            </select>
+                            <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg">Add Financial Asset</button>
+                        </form>
+                        <div id="assetList" class="space-y-2 max-h-60 overflow-y-auto pr-2"></div>
+                    </div>
+                    <div class="bg-bg-gray-800 p-5 rounded-xl shadow-lg">
+                        <h3 class="text-xl font-bold mb-4 flex items-center"><i class="fas fa-credit-card mr-3 text-red-400"></i>Liabilities</h3>
+                        <form id="addLiabilityForm" class="mb-4">
+                            <input type="text" id="liability-name" placeholder="Liability Name (e.g., Mortgage)" class="form-input w-full bg-bg-gray-700 border border-gray-600 rounded-lg px-4 py-2" required>
+                            <input type="number" id="liability-amount" placeholder="Amount Owed" step="0.01" class="form-input w-full bg-bg-gray-700 border border-gray-600 rounded-lg px-4 py-2" required>
+                            <select id="liability-type" class="form-input w-full bg-bg-gray-700 border border-gray-600 rounded-lg px-4 py-2">
+                                <option value="General">General Liability</option><option value="HELOC">HELOC</option>
+                            </select>
+                            <div id="heloc-details" class="hidden">
+                                <input type="number" id="heloc-interest" placeholder="Interest Rate (%)" step="0.01" class="form-input w-full bg-bg-gray-700 border border-gray-600 rounded-lg px-4 py-2">
+                                <input type="number" id="heloc-day" placeholder="Payment Day of Month" min="1" max="31" class="form-input w-full bg-bg-gray-700 border border-gray-600 rounded-lg px-4 py-2">
+                                <select id="heloc-account" class="form-input w-full bg-bg-gray-700 border border-gray-600 rounded-lg px-4 py-2"></select>
+                            </div>
+                            <button type="submit" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg">Add Liability</button>
+                        </form>
+                        <div id="liabilityList" class="space-y-2 max-h-60 overflow-y-auto pr-2"></div>
+                    </div>
+                </div>
+
+                <div class="bg-bg-gray-800 p-5 rounded-xl shadow-lg">
+                    <h3 class="text-xl font-bold mb-4 flex items-center"><i class="fas fa-chart-line mr-3 text-green-400"></i>Stock Portfolio</h3>
+                    <div id="stock-container"></div>
+                    <div class="add-stock-form">
+                        <input type="text" id="new-stock-symbol" placeholder="Stock Symbol (e.g., AAPL)" class="form-input w-full bg-bg-gray-700 border border-gray-600 rounded-lg px-4 py-2">
+                        <input type="number" id="new-stock-shares" placeholder="# of Shares" class="form-input w-full bg-bg-gray-700 border border-gray-600 rounded-lg px-4 py-2">
+                        <button class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg" onclick="window.app.addStock()">Add Stock</button>
+                    </div>
+                </div>
+
+                <div class="bg-bg-gray-800 p-5 rounded-xl shadow-lg"> ... </div>
+                <div class="bg-bg-gray-800 p-5 rounded-xl shadow-lg"> ... </div>
+            </div>
+
+            <div class="lg:col-span-1 space-y-6"> ... </div>
+        </main>
+        
+        <div id="editModal" class="fixed inset-0 ..."> ... </div>
+    </div>
+
+<script>
+class FinanceDashboard {
+    constructor() {
+        this.state = {
+            assets: [],
+            liabilities: [],
+            recurring: [],
+            transactions: [],
+            stocks: [ // Default stocks
+                { symbol: 'NVDA', price: 924.79, change: -1.0, shares: 25 },
+                { symbol: 'TSLA', price: 177.48, change: 2.15, shares: 50 }
+            ],
+            calendarDate: dayjs()
+        };
+        this.overviewChart = null;
+        this.editingItem = null;
+        this.stockCharts = {}; // NEW: To hold Chart.js instances for stocks
+    }
+
+    // --- SETUP ---
+    init() {
+        this.loadState();
+        this.cacheDOMElements();
+        this.addEventListeners();
+        this.render();
+        // NEW: Start live updates for stock prices
+        setInterval(() => this.updateStockPrices(), 60000); // Update every minute
+    }
+    
+    // --- DATA PERSISTENCE ---
+    saveState() {
+        localStorage.setItem('financeDashboardState_v5', JSON.stringify(this.state));
+    }
+
+    loadState() {
+        const savedState = localStorage.getItem('financeDashboardState_v5');
+        if (savedState) {
+            const parsed = JSON.parse(savedState);
+            this.state = { ...this.state, ...parsed }; // Merge saved state with defaults
+            this.state.calendarDate = dayjs(this.state.calendarDate);
+        }
+    }
+    
+    // --- MAIN RENDER & CALCULATION ---
+    render() {
+        // ... (render bank accounts, lists, etc.)
+        this.renderStocks(); // NEW: Render the stock portfolio
+        // The rest of the render function updates automatically
+    }
+
+    calculateFinancials(untilDate = dayjs()) {
+        // ... (calculates bank balances, non-bank assets)
+
+        // NEW: Calculate total value of stocks
+        const totalStockValue = this.state.stocks.reduce((sum, stock) => sum + (stock.price * stock.shares), 0);
+        
+        // MODIFIED: Add stock value to total assets
+        const totalAssets = Object.values(bankAccountBalances).reduce((sum, bal) => sum + bal, 0) + nonBankAssetsValue + totalStockValue;
+        
+        const totalLiabilities = this.state.liabilities.reduce((sum, liability) => sum + liability.value, 0);
+        const netWorth = totalAssets - totalLiabilities;
+        return { totalAssets, totalLiabilities, netWorth, bankAccountBalances };
+    }
+
+    // --- NEW: STOCK PORTFOLIO METHODS ---
+    renderStocks() {
+        const container = document.getElementById('stock-container');
+        container.innerHTML = '';
+        this.state.stocks.forEach(stock => {
+            const stockElement = this.createStockElement(stock);
+            container.appendChild(stockElement);
+            setTimeout(() => this.renderStockChart(stock.symbol, 1), 0);
+        });
+    }
+
+    createStockElement(stock) {
+        const item = document.createElement('div');
+        item.className = 'stock-item';
+        item.id = `stock-${stock.symbol}`;
+        this.updateStockElementContent(item, stock);
+        return item;
+    }
+
+    updateStockElementContent(element, stock) {
+        const changeClass = stock.change >= 0 ? 'price-up' : 'price-down';
+        const sign = stock.change >= 0 ? '+' : '';
+        const totalValueUSD = stock.price * stock.shares;
+        
+        element.innerHTML = `
+            <div class="stock-item-header">
+                <div class="stock-info">${stock.symbol}</div>
+                <button class="delete-btn" onclick="window.app.deleteStock('${stock.symbol}')"><i data-feather="x-circle"></i></button>
+                <div class="stock-price-usd ${changeClass}">
+                    <span>$${stock.price.toFixed(2)} USD</span>
+                    <span class="price-change">(${sign}${stock.change.toFixed(2)})</span>
+                </div>
+            </div>
+            <div class="chart-container"><canvas id="chart-${stock.symbol}"></canvas></div>
+            <div class="chart-controls" id="controls-${stock.symbol}">
+                <button class="active" onclick="window.app.renderStockChart('${stock.symbol}', 1, this)">1D</button>
+                <button onclick="window.app.renderStockChart('${stock.symbol}', 5, this)">5D</button>
+                <button onclick="window.app.renderStockChart('${stock.symbol}', 30, this)">1M</button>
+                <button onclick="window.app.renderStockChart('${stock.symbol}', 365, this)">1Y</button>
+            </div>
+            <div class="stock-item-details">
+                <p><span>Shares:</span><input type="number" class="shares-input" value="${stock.shares}" onchange="window.app.updateShares('${stock.symbol}', this.value)"></p>
+                <hr style="border: none; border-top: 1px solid #374151; margin: 6px 0;">
+                <p><strong>Value (USD):</strong><strong>$${totalValueUSD.toFixed(2)}</strong></p>
+            </div>
+        `;
+        // Use a modern icon library or Font Awesome if you have it
+        if (window.feather) {
+            window.feather.replace();
+        }
+    }
+
+    updateShares(symbol, newShares) {
+        const stock = this.state.stocks.find(s => s.symbol === symbol);
+        if (stock) {
+            stock.shares = parseFloat(newShares) || 0;
+            this.saveAndRender();
+        }
+    }
+
+    addStock() {
+        const symbol = document.getElementById('new-stock-symbol').value.toUpperCase().trim();
+        const shares = parseFloat(document.getElementById('new-stock-shares').value);
+        if (symbol && shares > 0 && !this.state.stocks.some(s => s.symbol === symbol)) {
+            const newStock = { symbol, shares, price: (Math.random() * 800 + 50), change: (Math.random() * 10 - 5) };
+            this.state.stocks.push(newStock);
+            document.getElementById('new-stock-symbol').value = '';
+            document.getElementById('new-stock-shares').value = '';
+            this.saveAndRender();
+        } else {
+            alert("Please enter a valid, unique stock symbol and number of shares.");
+        }
+    }
+
+    deleteStock(symbol) {
+        if (this.stockCharts[symbol]) {
+            this.stockCharts[symbol].destroy();
+            delete this.stockCharts[symbol];
+        }
+        this.state.stocks = this.state.stocks.filter(s => s.symbol !== symbol);
+        this.saveAndRender();
+    }
+
+    updateStockPrices() {
+        this.state.stocks.forEach(stock => {
+            const randomChange = (Math.random() * stock.price * 0.01) - (stock.price * 0.005);
+            stock.price += randomChange;
+            stock.change = randomChange;
+        });
+        // We call saveAndRender to update all UI elements, including stock list and main totals
+        this.saveAndRender(); 
+    }
+
+    // --- Charting Functions (Integrated) ---
+    renderStockChart(symbol, days, btnElement) {
+        if (btnElement) {
+            btnElement.parentElement.querySelectorAll('button').forEach(btn => btn.classList.remove('active'));
+            btnElement.classList.add('active');
+        }
+        const stock = this.state.stocks.find(s => s.symbol === symbol);
+        if (!stock) return;
+        const ctx = document.getElementById(`chart-${symbol}`);
+        if (!ctx) return; 
+        if (this.stockCharts[symbol]) {
+            this.stockCharts[symbol].destroy();
+        }
+        
+        // Dummy data generation
+        const chartData = [];
+        let currentPrice = stock.price;
+        for (let i = 0; i < 40; i++) {
+            const date = new Date(new Date().getTime() - (40 - i) * (days * 6) * 60 * 1000);
+            chartData.push({ x: date, y: currentPrice });
+            const change = (Math.random() * currentPrice * 0.05) - (currentPrice * 0.025);
+            currentPrice -= change;
+        }
+        chartData[chartData.length-1].y = stock.price;
+        
+        const borderColor = chartData[chartData.length - 1].y >= chartData[0].y ? '#28a745' : '#dc3545';
+
+        this.stockCharts[symbol] = new Chart(ctx, {
+            type: 'line',
+            data: { datasets: [{ data: chartData, borderColor: borderColor, borderWidth: 2, pointRadius: 0, tension: 0.3 }] },
+            options: {
+                responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
+                scales: { x: { type: 'time', time: { unit: 'hour' }, ticks: { display: false } }, y: { display: false } }
+            }
+        });
+    }
+
+    // ... (rest of the original FinanceDashboard class methods: handleAddAsset, handleAddLiability, deleteItem, openModal, etc.)
+}
+
+// Helper functions & Initialization
+const formatCurrency = (value) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value || 0);
+window.app = new FinanceDashboard();
+document.addEventListener('DOMContentLoaded', () => window.app.init());
+
+</script>
+</body>
+</html>

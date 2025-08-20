@@ -1,0 +1,1951 @@
+
+
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Real Estate Business Hub v6.7 (Fixed)</title>
+    <style>
+        /* --- General Styles & Layout --- */
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #3498db;
+            --light-gray: #ecf0f1;
+            --medium-gray: #bdc3c7;
+            --dark-gray: #7f8c8d;
+            --white: #ffffff;
+            --red: #e74c3c;
+            --yellow: #f1c40f;
+            --green: #2ecc71;
+            --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            font-family: var(--font-family);
+            background-color: var(--light-gray);
+            margin: 0;
+            color: var(--primary-color);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 0 20px;
+        }
+
+        header {
+            background-color: var(--primary-color);
+            color: var(--white);
+            padding: 20px;
+            text-align: center;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 2em;
+        }
+        
+        header p {
+            margin: 5px 0 0;
+            color: var(--medium-gray);
+        }
+
+        /* --- Navigation Tabs --- */
+        nav {
+            display: flex;
+            background-color: var(--white);
+            border-bottom: 1px solid var(--medium-gray);
+        }
+
+        .nav-button {
+            flex: 1;
+            padding: 15px;
+            text-align: center;
+            font-weight: bold;
+            cursor: pointer;
+            border: none;
+            background-color: transparent;
+            font-size: 1.1em;
+            color: var(--dark-gray);
+            transition: all 0.2s ease-in-out;
+        }
+
+        .nav-button.active, .nav-button:hover {
+            color: var(--secondary-color);
+            border-bottom: 3px solid var(--secondary-color);
+        }
+
+        /* --- Main Content Sections --- */
+        .content-section {
+            display: none;
+            padding-top: 20px;
+        }
+
+        .content-section.active {
+            display: block;
+        }
+        
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        .add-new-button {
+            background-color: var(--secondary-color);
+            color: var(--white);
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        
+        .add-new-button:hover {
+            background-color: #2980b9;
+        }
+
+        /* --- Today's Tasks & Calendar --- */
+        .tasks-container {
+            background-color: var(--white);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+        .calendar-day {
+            margin-bottom: 20px;
+        }
+        .calendar-day h3 {
+            border-bottom: 2px solid var(--secondary-color);
+            padding-bottom: 5px;
+            margin-bottom: 10px;
+        }
+        .task-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 0;
+            border-bottom: 1px solid var(--light-gray);
+        }
+        .task-item:last-child { border-bottom: none; }
+        .task-details { flex-grow: 1; }
+        .task-details strong { font-size: 1.1em; }
+        .task-details span { color: var(--dark-gray); }
+
+        /* --- Cards --- */
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 20px;
+        }
+        .card {
+            background-color: var(--white);
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .card-header { display: flex; justify-content: space-between; align-items: flex-start; }
+        .card-header h3 { margin: 0; font-size: 1.4em; }
+        .card-body p { margin: 0; color: var(--dark-gray); display: flex; align-items: center; gap: 8px; }
+        .card-footer { margin-top: auto; padding-top: 15px; border-top: 1px solid var(--light-gray); display: flex; gap: 10px; flex-wrap: wrap; }
+        .card-button { flex-grow: 1; padding: 8px 12px; border-radius: 5px; border: 1px solid var(--medium-gray); background-color: var(--light-gray); cursor: pointer; font-weight: bold; text-align: center; }
+        .card-button.primary { background-color: var(--secondary-color); color: var(--white); border-color: var(--secondary-color); }
+        
+        /* --- Deadline Styles --- */
+        .deadline {
+            padding: 10px;
+            border-radius: 5px;
+            font-weight: bold;
+            text-align: center;
+            margin-top: 10px;
+        }
+        .deadline.urgent { background-color: #fbe9e7; color: var(--red); border: 1px solid var(--red); }
+        .deadline.soon { background-color: #fffde7; color: #f57f17; border: 1px solid var(--yellow); }
+        .deadline.safe { background-color: #e8f5e9; color: var(--green); border: 1px solid var(--green); }
+        .deadline.firm { background-color: #e3f2fd; color: var(--secondary-color); border: 1px solid var(--secondary-color); }
+        .deadline.closed { background-color: var(--light-gray); color: var(--dark-gray); }
+
+        /* --- Modal (Popup Form) --- */
+        .modal {
+            display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.6);
+        }
+        .modal-content { background-color: var(--white); margin: 5% auto; padding: 30px; border-radius: 8px; width: 90%; max-width: 700px; position: relative; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--light-gray); padding-bottom: 15px; margin-bottom: 20px; }
+        .modal-header h2 { margin: 0; }
+        .close-button { color: var(--dark-gray); font-size: 28px; font-weight: bold; cursor: pointer; }
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .form-group { display: flex; flex-direction: column; }
+        .form-group.full-width { grid-column: 1 / -1; }
+        .form-group label { margin-bottom: 5px; font-weight: bold; }
+        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 10px; border: 1px solid var(--medium-gray); border-radius: 5px; font-size: 1em; box-sizing: border-box; }
+        textarea { resize: vertical; min-height: 80px; }
+        .modal-footer { display: flex; justify-content: flex-end; gap: 10px; margin-top: 30px; padding-top: 20px; border-top: 1px solid var(--light-gray); }
+        .modal-footer button { padding: 12px 25px; }
+        .delete-button { background-color: var(--red); margin-right: auto; }
+
+        /* --- Plan & Transaction Editor Styles --- */
+        .editor-container { max-height: 40vh; overflow-y: auto; padding: 10px; border: 1px solid var(--light-gray); border-radius: 5px; }
+        .editor-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+        .editor-row input[type="text"] { flex-grow: 1; }
+        .editor-row input[type="number"] { width: 80px; }
+        .editor-row .delete-row-btn { background: none; border: none; color: var(--red); font-size: 1.5em; cursor: pointer; padding: 0 5px; }
+        .plan-task-row { flex-direction: column; align-items: stretch; padding-bottom: 15px; border-bottom: 1px solid var(--light-gray); }
+        .plan-task-row:last-child { border-bottom: none; }
+        .task-main-inputs { display: flex; align-items: center; gap: 10px; }
+        .placeholder-note { font-size: 0.8em; color: var(--dark-gray); margin-top: 5px; }
+
+        /* --- Script Viewer & AI Assistant Modal --- */
+        #script-viewer-content, #ai-response-area { white-space: pre-wrap; background-color: var(--light-gray); padding: 15px; border-radius: 5px; max-height: 50vh; overflow-y: auto; }
+        .copy-notification { color: var(--green); font-weight: bold; text-align: center; margin-top: 10px; display: none; }
+        
+        /* --- AI Assistant FAB --- */
+        #ai-fab {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 60px;
+            height: 60px;
+            background-color: var(--primary-color);
+            color: var(--white);
+            border-radius: 50%;
+            border: none;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            font-size: 24px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            z-index: 1001;
+        }
+        #ai-loading-spinner {
+            border: 4px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top: 4px solid var(--white);
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+            display: none;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        @media (max-width: 768px) {
+            .form-grid { grid-template-columns: 1fr; }
+            .form-group.full-width { grid-column: 1 / 1; }
+            .card-grid { grid-template-columns: 1fr; }
+        }
+/* --- Activity Log Styles --- */
+        .activity-log-container { margin-top: 25px; border-top: 1px solid var(--light-gray); padding-top: 15px; }
+        .activity-log-container h3 { margin-top: 0; }
+        .activity-log-scroll { max-height: 200px; overflow-y: auto; padding-right: 10px; border: 1px solid var(--light-gray); border-radius: 5px; padding: 10px; }
+        .activity-log-item { padding: 8px 0; border-bottom: 1px solid var(--light-gray); }
+        .activity-log-item:last-child { border-bottom: none; }
+        .activity-log-item span { font-size: 0.85em; color: var(--dark-gray); }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Real Estate Business Hub</h1>
+        <p>Your personal CRM and Transaction Tracker with Action Plans</p>
+    </header>
+
+    <div class="container">
+        <nav>
+            <button id="nav-crm" class="nav-button active">CRM Dashboard</button>
+            <button id="nav-calendar" class="nav-button">Calendar</button>
+            <button id="nav-transactions" class="nav-button">Transaction Tracker</button>
+            <button id="nav-plans" class="nav-button">Action Plans</button>
+            <button id="nav-settings" class="nav-button">Settings</button>
+        </nav>
+
+        <!-- CRM Section -->
+        <section id="crm-section" class="content-section active">
+            <div id="todays-tasks-container" class="tasks-container">
+<div style="display: flex; justify-content: flex-end; margin-bottom: 20px;">
+                <button id="analyze-in-dashboard-btn" class="add-new-button" style="background-color: #8B5CF6;">
+                    <i class="fas fa-chart-pie" style="margin-right: 8px;"></i>Analyze in Dashboard
+                </button>
+            </div>
+                <h2>Today's To-Do</h2>
+                <div id="todays-tasks-list"></div>
+                <h2 style="margin-top: 30px; display: none;" id="completed-header">Completed Today</h2>
+                <div id="completed-tasks-list"></div>
+            </div>
+            <div class="section-header">
+                <h2>All Contacts</h2>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <label for="contact-status-filter">Filter by Status:</label>
+                    <select id="contact-status-filter" style="padding: 8px; border-radius: 5px; border: 1px solid var(--medium-gray);"></select>
+                </div>
+                <div>
+                    <button id="import-contacts-csv-btn" class="add-new-button" style="background-color: var(--yellow); color: #2c3e50; margin-right: 10px;">Import CSV</button>
+                    <input type="file" id="import-contacts-file-input" style="display: none;" accept=".csv">
+                    <button id="export-contacts-csv-btn" class="add-new-button" style="background-color: var(--green); margin-right: 10px;">Export CSV (Google)</button>
+                    <button id="add-contact-btn" class="add-new-button">New Contact</button>
+                </div>
+            </div>
+            <div id="contact-list" class="card-grid"></div>
+        </section>
+
+        <!-- Calendar Section -->
+        <section id="calendar-section" class="content-section">
+            <div class="section-header">
+                <h2>Upcoming Tasks (Next 365 Days)</h2>
+                <div>
+                    <button id="export-calendar-csv-btn" class="add-new-button" style="background-color: var(--green); margin-right: 10px;">Export CSV (Google)</button>
+                    <button id="export-calendar-ics-btn" class="add-new-button">Export iCal (.ics)</button>
+                </div>
+            </div>
+            <div id="calendar-view-container" class="tasks-container"></div>
+        </section>
+
+        <!-- Transactions Section -->
+        <section id="transactions-section" class="content-section">
+            <div class="section-header">
+                <h2>Transactions</h2>
+                 <div>
+                    <button id="export-transactions-csv-btn" class="add-new-button" style="background-color: var(--green); margin-right: 10px;">Export CSV</button>
+                    <button id="add-transaction-btn" class="add-new-button">New Transaction</button>
+                </div>
+            </div>
+            <div id="transaction-list" class="card-grid"></div>
+        </section>
+
+        <!-- Action Plans Section -->
+        <section id="plans-section" class="content-section">
+            <div class="section-header">
+                <h2>Action Plan Templates</h2>
+                <button id="add-plan-btn" class="add-new-button">New Plan Template</button>
+            </div>
+            <div id="plan-list" class="card-grid"></div>
+        </section>
+
+        <!-- Settings Section -->
+        <section id="settings-section" class="content-section">
+             <div class="section-header">
+                <h2>Backup & Restore</h2>
+            </div>
+            <div class="card">
+                <h3>Backup All Data</h3>
+                <p>This will download a single JSON file containing all your contacts, transactions, and custom action plans. Keep this file in a safe place.</p>
+                <button id="backup-all-btn" class="add-new-button">Backup All Data</button>
+            </div>
+            <div class="card" style="margin-top: 20px;">
+                <h3>Restore from Backup</h3>
+                <p>Restore your data from a previously saved JSON backup file. <strong>Warning:</strong> This will overwrite all current data in the application.</p>
+                <button id="restore-all-btn" class="add-new-button" style="background-color: var(--red);">Restore from Backup</button>
+                <input type="file" id="restore-file-input" style="display: none;" accept=".json">
+            </div><div class="card" style="margin-top: 20px;">
+                <h3>Quick Links / Resources Hub</h3>
+                <p>Your one-stop hub for essential documents, tools, and websites. Click any link to open it in a new tab.</p>
+                <div id="quick-links-container" class="card-grid" style="grid-template-columns: 1fr; gap: 10px;">
+                    </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Modals -->
+    <div id="contact-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header"><h2 id="contact-modal-title">New Contact</h2><span class="close-button">&times;</span></div>
+            <form id="contact-form">
+                <input type="hidden" id="contactId">
+                <div class="form-grid">
+                    <div class="form-group"><label for="fullName">Full Name</label><input type="text" id="fullName" required></div>
+                    <div class="form-group"><label for="contactStatus">Status</label><select id="contactStatus" required><option>New Lead</option><option>Prospect</option><option>Active Buyer</option><option>Active Seller</option><option>Under Contract</option><option>Past Client</option></select></div>
+                    <div class="form-group"><label for="email">Email</label><input type="email" id="email"></div>
+                    <div class="form-group"><label for="phone">Phone</label><input type="tel" id="phone"></div>
+                    <div class="form-group"><label for="areaOfInterest">Area of Interest</label><input type="text" id="areaOfInterest" placeholder="e.g., Westdale, Kirkendall"></div>
+                    <div class="form-group"><label for="propertyType">Property Type</label><input type="text" id="propertyType" placeholder="e.g., Bungalow, 2-Storey"></div>
+                    <div class="form-group"><label for="planStartDate">Plan Start Date</label><input type="date" id="planStartDate" required></div>
+                    <div class="form-group"><label for="birthday">Birthday (Optional)</label><input type="date" id="birthday"></div>
+                    <div class="form-group full-width"><label for="source">Source</label><select id="source"><option>Open House</option><option>Website Lead</option><option>Flyer Call-In</option><option>Referral</option><option>Door Knocking</option><option>FSBO</option><option>Networking</option><option>Casual Encounter</option></select></div>
+                    <div class="form-group full-width"><label for="actionPlanId">Apply Action Plan</label><select id="actionPlanId"><option value="">None</option></select></div>
+                    <div class="form-group full-width"><label for="notes">General Notes</label><textarea id="notes"></textarea></div>
+                </div>
+                <div class="modal-footer"><button type="button" id="delete-contact-btn" class="add-new-button delete-button">Delete</button><button type="submit" class="add-new-button">Save Contact</button></div>
+            </form>
+<div id="activity-log-container" class="activity-log-container" style="display: none;">
+                    <h3>Activity Log</h3>
+                    <div id="activity-log-scroll" class="activity-log-scroll">
+                        <p>No activity recorded yet.</p>
+                    </div>
+                </div>
+        </div>
+    </div>
+    <div id="transaction-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header"><h2 id="transaction-modal-title">New Transaction</h2><span class="close-button">&times;</span></div>
+            <form id="transaction-form">
+                <input type="hidden" id="transactionId">
+                <div class="form-grid">
+                    <div class="form-group full-width"><label for="t-propertyAddress">Property Address</label><input type="text" id="t-propertyAddress" required></div>
+                    <div class="form-group"><label for="t-clientName">Client Name(s)</label><input type="text" id="t-clientName" required></div>
+                    <div class="form-group"><label for="t-representation">Representation</label><select id="t-representation" required><option>Buyer Side</option><option>Seller Side</option><option>Both</option></select></div>
+                    <div class="form-group"><label for="t-acceptanceDate">Acceptance Date</label><input type="date" id="t-acceptanceDate" required></div>
+                    <div class="form-group"><label for="t-closingDate">Closing Date</label><input type="date" id="t-closingDate" required></div>
+<div class="form-group full-width">
+                        <label for="t-documentLink">Document Folder Link (Google Drive, etc.)</label>
+                        <input type="url" id="t-documentLink" placeholder="https://docs.google.com/drive/folders/...">
+                    </div>
+                    <div class="form-group full-width"><label for="t-transactionStatus">Status</label><select id="t-transactionStatus" required><option>Active/Conditional</option><option>Firm</option><option>Closed</option><option>Collapsed</option></select></div>
+                </div>
+                <hr style="grid-column: 1 / -1; margin: 10px 0;">
+                <div class="form-group full-width"><label>Conditions & Deadlines</label><div id="transaction-conditions-container" class="editor-container"></div></div>
+                <button type="button" id="add-condition-btn" class="add-new-button" style="background-color: var(--green); margin-top: 10px;">+ Add Condition</button>
+                <div class="modal-footer"><button type="button" id="delete-transaction-btn" class="add-new-button delete-button">Delete</button><button type="submit" class="add-new-button">Save Transaction</button></div>
+            </form>
+        </div>
+    </div>
+    <div id="post-save-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header"><h2 id="post-save-modal-title">Contact Saved!</h2><span class="close-button">&times;</span></div>
+            <div style="text-align: center; padding: 20px 0;">
+                <p>What would you like to do next?</p>
+                <div style="display: flex; justify-content: center; gap: 15px; flex-wrap: wrap;">
+                    <button id="download-vcf-btn" class="add-new-button">Download Contact Card (.vcf)</button>
+                    <button id="download-ics-btn" class="add-new-button">Download Action Plan (.ics)</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="plan-editor-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header"><h2 id="plan-editor-title">Edit Action Plan</h2><span class="close-button">&times;</span></div>
+            <form id="plan-editor-form">
+                <input type="hidden" id="planId">
+                <div class="form-group full-width"><label for="planName">Plan Name</label><input type="text" id="planName" required></div>
+                <div class="form-group full-width">
+                    <label>Tasks</label>
+                    <div class="placeholder-note">Use placeholders like [NAME], [AREA], [TYPE]. They will be replaced automatically.</div>
+                    <div id="plan-tasks-container" class="editor-container"></div>
+                </div>
+                <button type="button" id="add-task-btn" class="add-new-button" style="background-color: var(--green); margin-top: 10px;">+ Add Task</button>
+                <div class="modal-footer"><button type="button" id="delete-plan-btn" class="add-new-button delete-button">Delete Plan</button><button type="submit" class="add-new-button">Save Plan</button></div>
+            </form>
+        </div>
+    </div>
+    <div id="script-viewer-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header"><h2 id="script-viewer-title">Task Script</h2><span class="close-button">&times;</span></div>
+            <pre id="script-viewer-content"></pre>
+            <div class="modal-footer"><span class="copy-notification" id="copy-notification">Copied!</span><button id="copy-script-btn" class="add-new-button">Copy to Clipboard</button></div>
+        </div>
+    </div>
+    <div id="ai-assistant-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header"><h2>AI Assistant</h2><span class="close-button">&times;</span></div>
+            <form id="ai-form">
+                <div class="form-group full-width"><label for="ai-prompt">How can I help?</label><textarea id="ai-prompt" rows="4" placeholder="e.g., Write a compelling property description for a 3-bed bungalow in Westdale with a large backyard..."></textarea></div>
+                <div class="form-group full-width"><label>Response</label><div id="ai-response-area">Your AI-generated content will appear here...</div></div>
+                <div class="modal-footer"><button type="submit" class="add-new-button"><span id="ai-generate-text">Generate</span><div id="ai-loading-spinner"></div></button></div>
+            </form>
+        </div>
+    </div>
+
+    <button id="ai-fab" title="AI Assistant">✨</button>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+
+    // --- State Management ---
+    let contacts = [];
+    let transactions = [];
+    let actionPlans = [];
+    let quickLinks = [
+        { category: 'Your Personal Tools', name: 'Real Estate Performance Dashboard', url: 'https://kenmorgan.ca/UpdatedFullCompleteDashboardPerfected2025.html' },
+        { category: 'Your Personal Tools', name: 'Business Travel Log', url: 'https://kenmorgan.ca/RevisedBusinessTravelLog2025.html' },
+        { category: 'Your Personal Tools', name: 'Full Expense Tracker', url: 'https://kenmorgan.ca/ExpenseTrackerHSTincludedAug2025.html' },
+        { category: 'Client-Facing Tools', name: 'Open House Financing & Calculators', url: 'https://kenmorgan.ca/2PerfectedOpenHouseMortgagePrintoutToolBrandedTabbedCalculators.html' },
+        { category: 'Essential Work Links', name: 'ITSO Realtor Login', url: 'https://iam.itsorealestate.ca/idp/login' },
+        { category: 'Essential Work Links', name: 'Google Drive (Documents & Templates)', url: 'https://drive.google.com/drive/folders/1d06EaM5EUo-L8zAfjj7T3wHJ7TRiuHcy?usp=drive_link' },
+        { category: 'Suggested Professional Resources', name: 'RECO (Real Estate Council of Ontario)', url: 'https://www.reco.on.ca/'},
+        { category: 'Suggested Professional Resources', name: 'Canva (Marketing & Flyers)', url: 'https://www.canva.com/'}
+    ];
+const GEMINI_API_KEY = "AIzaSyCxQLzSj3qrwP0cRJb1r5otDhbVO1QP8qI";
+
+    // --- DOM Element References ---
+    const navCrm = document.getElementById('nav-crm'), navCalendar = document.getElementById('nav-calendar'), navTransactions = document.getElementById('nav-transactions'), navPlans = document.getElementById('nav-plans'), navSettings = document.getElementById('nav-settings');
+    const crmSection = document.getElementById('crm-section'), calendarSection = document.getElementById('calendar-section'), transactionSection = document.getElementById('transactions-section'), plansSection = document.getElementById('plans-section'), settingsSection = document.getElementById('settings-section');
+    const contactList = document.getElementById('contact-list'), todaysTasksList = document.getElementById('todays-tasks-list'), transactionList = document.getElementById('transaction-list'), planList = document.getElementById('plan-list'), calendarViewContainer = document.getElementById('calendar-view-container');
+    const contactModal = document.getElementById('contact-modal'), transactionModal = document.getElementById('transaction-modal'), planEditorModal = document.getElementById('plan-editor-modal'), postSaveModal = document.getElementById('post-save-modal'), scriptViewerModal = document.getElementById('script-viewer-modal'), aiAssistantModal = document.getElementById('ai-assistant-modal');
+    const modals = [contactModal, transactionModal, postSaveModal, planEditorModal, scriptViewerModal, aiAssistantModal];
+    const contactForm = document.getElementById('contact-form'), transactionForm = document.getElementById('transaction-form'), planEditorForm = document.getElementById('plan-editor-form'), aiForm = document.getElementById('ai-form');
+    const actionPlanSelect = document.getElementById('actionPlanId');
+    const contactStatusFilter = document.getElementById('contact-status-filter');
+
+    // --- Utility Functions ---
+    const saveContacts = () => localStorage.setItem('rehub_contacts_v6', JSON.stringify(contacts));
+    const saveTransactions = () => localStorage.setItem('rehub_transactions_v6', JSON.stringify(transactions));
+    const saveActionPlans = () => localStorage.setItem('rehub_action_plans_v6', JSON.stringify(actionPlans));
+    const getTodayString = () => new Date().toISOString().split('T')[0];
+    const parseDate = (ds) => ds ? new Date(new Date(ds).valueOf() + new Date().getTimezoneOffset() * 60 * 1000) : null;
+    const daysUntil = (date) => {
+        if (!date) return Infinity;
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const diffTime = date.getTime() - today.getTime();
+        return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    };
+
+    // --- Navigation Logic ---
+    const renderQuickLinks = () => {
+        const container = document.getElementById('quick-links-container');
+        container.innerHTML = '';
+
+        const linksByCategory = quickLinks.reduce((acc, link) => {
+            if (!acc[link.category]) {
+                acc[link.category] = [];
+            }
+            acc[link.category].push(link);
+            return acc;
+        }, {});
+
+        for (const category in linksByCategory) {
+            const categoryHeader = document.createElement('h4');
+            categoryHeader.textContent = category;
+            categoryHeader.style.marginBottom = '5px';
+            categoryHeader.style.borderBottom = '1px solid var(--light-gray)';
+            categoryHeader.style.paddingBottom = '5px';
+            container.appendChild(categoryHeader);
+
+            linksByCategory[category].forEach(link => {
+                const linkElement = document.createElement('a');
+                linkElement.href = link.url;
+                linkElement.textContent = link.name;
+                linkElement.target = '_blank'; // Open in new tab
+                linkElement.className = 'card-button';
+                linkElement.style.marginBottom = '5px';
+                container.appendChild(linkElement);
+            });
+        }
+    };
+
+    const switchView = (view) => {
+        document.querySelectorAll('.content-section').forEach(s => s.classList.remove('active'));
+        document.querySelectorAll('.nav-button').forEach(b => b.classList.remove('active'));
+        document.getElementById(`${view}-section`).classList.add('active');
+        document.getElementById(`nav-${view}`).classList.add('active');
+
+        if (view === 'crm') renderCrmDashboard();
+        if (view === 'calendar') renderCalendarView();
+        if (view === 'transactions') renderTransactions();
+        if (view === 'plans') renderActionPlans();
+        if (view === 'settings') renderQuickLinks();
+    };
+    [navCrm, navCalendar, navTransactions, navPlans, navSettings].forEach(b => b.addEventListener('click', () => switchView(b.id.split('-')[1])));
+
+    // --- Modal Logic ---
+    const openModal = (modal) => modal.style.display = 'block';
+    const closeModal = (modal) => modal.style.display = 'none';
+    modals.forEach(modal => {
+        if(modal) {
+            const closeBtn = modal.querySelector('.close-button');
+            if(closeBtn) closeBtn.addEventListener('click', () => closeModal(modal));
+            window.addEventListener('click', (e) => { if (e.target === modal) closeModal(modal); });
+        }
+    });
+
+    // --- Action Plan Management ---
+    const loadActionPlans = () => {
+        const stored = localStorage.getItem('rehub_action_plans_v6');
+        if (stored) {
+            actionPlans = JSON.parse(stored);
+        } else {
+            // This is a master list of holiday tasks that will be added to every plan.
+            const holidayTasks = [
+                { date: '01-01', summary: 'New Year\'s Day Greeting', template: 'Happy New Year, [NAME]! Wishing you all the best for the year ahead. -[Your Name]' },
+                { date: '02-14', summary: 'Valentine\'s Day Greeting', template: 'Happy Valentine\'s Day, [NAME]! -[Your Name]' },
+                { date: '03-17', summary: 'St. Patrick\'s Day Greeting', template: 'Happy St. Patrick\'s Day, [NAME]! 🍀 -[Your Name]' },
+                { date: '04-01', summary: 'April Fools\' Day Post', template: 'Here\'s a fun post for April Fools\': "Just sold this beautiful home for 1 million jellybeans! #AprilFools". Remember to keep it light and professional, [NAME]!' },
+                { date: '05-05', summary: 'Cinco de Mayo Greeting', template: 'Happy Cinco de Mayo, [NAME]! Hope you have a festive day.' },
+                { date: '06-19', summary: 'Juneteenth Greeting (US)', template: 'Wishing you a thoughtful Juneteenth, [NAME].' },
+                { date: '07-01', summary: 'Canada Day Greeting (CAN)', template: 'Happy Canada Day, [NAME]! 🍁 Hope you have a great long weekend. -[Your Name]' },
+                { date: '07-04', summary: 'Independence Day Greeting (US)', template: 'Happy 4th of July, [NAME]! Hope you have a great day. 🇺🇸 -[Your Name]' },
+                { date: '10-31', summary: 'Halloween Greeting', template: 'Happy Halloween, [NAME]! Hope it\'s a spook-tacular one! 🎃 -[Your Name]' },
+                { date: '11-11', summary: 'Remembrance / Veterans Day', template: 'Thinking of you on this day of remembrance. #LestWeForget #VeteransDay' },
+                { date: '12-24', summary: 'Holiday Eve Greeting', template: 'Wishing you a magical Christmas Eve / Holiday Eve, [NAME]!' },
+                { date: '12-25', summary: 'Christmas / Holiday Greeting', template: 'Merry Christmas & Happy Holidays, [NAME]! Wishing you and your family a very happy holiday season. 🎄 -[Your Name]' },
+                { date: '12-26', summary: 'Boxing Day Message (CAN)', template: 'Hope you\'re having a relaxing Boxing Day, [NAME]! -[Your Name]' },
+                { date: '12-31', summary: 'New Year\'s Eve Greeting', template: 'Happy New Year\'s Eve, [NAME]! All the best as we head into the new year. -[Your Name]' }
+            ];
+
+            actionPlans = [
+                { id: 1, name: 'Sphere of Influence (Friend of a Friend)', tasks: [
+                    { days: 0, summary: 'Initial "Thank You" Text', template: "Hey [NAME], it's [Your Name]. [Referrer's Name] passed along your number. It was great to hear you're thinking about your real estate plans! No pressure at all, but I'd love to grab a coffee next week to chat more about what you're looking for in the Hamilton market. Let me know what your schedule looks like!" },
+                    { days: 7, summary: 'Follow-up "Coffee" Call', template: "Hi [NAME], it's [Your Name] calling. Just following up on my text. How does your week look for a quick coffee? My treat. I'm really interested to hear more about your goals." },
+                    { days: 90, summary: 'Quarterly Check-in Call (Value Add)', template: "Hi [NAME], it's [Your Name]. How have you been? I was just thinking about you and wanted to see how things are going. By the way, I just came across a great new [plumber/electrician/landscaper], and I remembered you mentioning you might need one. I can send you their info if you'd like." },
+                    { days: 270, summary: '9-Month "Market Shift" Email', template: "Hi [NAME],\n\nHope you're having a great fall. With the recent news about interest rates, I wanted to reach out. A lot of my clients are asking how these changes might affect their plans to buy or sell.\n\nI've put together a quick summary of what it means for the [AREA] market. If you'd like a copy, just let me know!\n\nBest,\n[Your Name]" },
+                    { days: 365, summary: '1-Year Anniversary of Contact', template: "Hi [NAME], it's [Your Name]. Believe it or not, it's been a year since we first connected! Just wanted to check in and see how you're doing. Are you still thinking about making a move in the near future?" },
+                    { days: 730, summary: '2-Year "Thinking of you" Call', template: "Hi [NAME], it's [Your Name]. It's been a while! I was just calling to see how you are and how life is treating you. Not a business call, just wanted to say hello." },
+                    ...holidayTasks
+                ]},
+                { id: 2, name: 'Door Knocking (Cold to Warm)', tasks: [
+                    { days: 0, summary: 'Send "Nice to meet you" text/email', template: "Hi [NAME], it was a pleasure chatting with you at your door today. Thanks for your time! If you need anything real estate related, my number is [Your Number]. Best, [Your Name]" },
+                    { days: 7, summary: 'Drop off Local Market Report', template: "Hi [NAME], I was in the neighbourhood and wanted to drop off a hyper-local market report for your street. Hope you find it interesting! Let me know if you have any questions. Best, [Your Name]" },
+                    { days: 21, summary: 'Follow-up call about report', template: "Hi [NAME], it's [Your Name]. I dropped off a market report a couple weeks ago and just wanted to see if you had any questions about what's happening with property values in [AREA]?" },
+                    { days: 90, summary: 'Quarterly "Just Sold" Postcard', template: "(Physical Mail) Design a postcard that says: 'Just Sold in Your Neighbourhood!' with details of a recent sale. Handwrite on it: '[NAME], thought you'd be interested in this!'" },
+                    { days: 180, summary: '6-Month Seasonal Check-in Call', template: "Hi [NAME], it's [Your Name]. We spoke a while back when I was in your neighbourhood. With spring/fall just around the corner, a lot of people are thinking about their real estate plans. Has anything changed for you?" },
+                    { days: 365, summary: '1-Year Anniversary Check-in', template: "Hi [NAME], it's [Your Name]. Can you believe it's been a year since we first met at your door? Just wanted to check in and see how things are." },
+                    { days: 545, summary: '18-Month "Still There?" Call', template: "Hi [NAME], it's [Your Name]. It's been a long time! Just doing my regular check-ins with the great people I've met in your neighbourhood. Are you still loving the area?" },
+                    ...holidayTasks
+                ]},
+                { id: 3, name: 'Open House Lead (High Intent)', tasks: [
+                    { days: 0, summary: 'Email "Great to Meet You"', template: "Hi [NAME],\n\nIt was great meeting you today at the open house at [Address]! Thanks for stopping by.\n\nI wanted to send over the official listing details for you to review. If you have any more questions about it, or about the market in Hamilton generally, please don't hesitate to reach out.\n\nBest,\n\n[Your Name]" },
+                    { days: 1, summary: 'Crucial Follow-up Call', template: "Hi [NAME], it's [Your Name]. We met at the open house yesterday. I'm just calling to properly follow up. Did you have any more thoughts on the property?\n\n(Listen...)\n\nGreat. And what are you hoping to find in your search? Are you focusing on the [AREA] area? What's most important to you in a [TYPE]?" },
+                    { days: 3, summary: 'Email with Similar Listings', template: "Hi [NAME],\n\nFollowing up on our chat, I've put together a few other listings that are similar to the one we saw, but with [mention a feature they wanted, e.g., a larger backyard].\n\n[Link 1]\n[Link 2]\n\nLet me know if any of these catch your eye and you'd like a private tour.\n\nBest,\n[Your Name]" },
+                    { days: 7, summary: 'Text about a new listing', template: "Hi [NAME], it's [Your Name]. A new [TYPE] just popped up in [AREA] that made me think of you. I can send over the details if you're interested. Hope you're having a great week!" },
+                    { days: 14, summary: 'Email "Tips for Winning in a Multiple Offer Situation"', template: "Hi [NAME],\n\nThe market in [AREA] is quite competitive right now. I wanted to share a quick guide I wrote on how to best position yourself in a multiple offer situation. It's a game-changer for my clients.\n\n[Link to blog post or attached PDF]\n\nHope it helps!\n[Your Name]" },
+                    { days: 30, summary: 'Monthly Market Update Email', template: "Hi [NAME],\n\nJust sending you a quick update on the Hamilton real estate market for the past month. We're seeing some interesting trends, especially in the [AREA] neighbourhood.\n\n[Insert a quick market stat or link to a blog post]\n\nHope you find this valuable!\n\nBest,\n[Your Name]" },
+                    ...holidayTasks
+                ]},
+                { id: 4, name: 'Past Client - Buyer (5-Year Circle of Life)', tasks: [
+                    { days: 30, summary: 'Send "Hope you are loving the new home" card', template: "Hi [NAME],\n\nJust a quick note to say I was thinking of you and hope you're settling in wonderfully into your new home!\n\nIt was such a pleasure working with you. If you know of any friends, family, or colleagues who are thinking of making a move, I'd be honoured if you'd pass my name along.\n\nBest,\n[Your Name]" },
+                    { days: 180, summary: '6-Month Check-in Call (Vendor List)', template: "Hi [NAME], it's [Your Name]. Believe it or not, it's been six months since you moved in! Just wanted to check in and see how everything is going. By the way, I've built up a great list of trusted local vendors (plumbers, electricians, etc.). If you ever need a recommendation, just let me know." },
+                    { days: 365, summary: '1-Year Home Anniversary Email & Gift Drop-off', template: "Hi [NAME],\n\nHappy one-year Home Anniversary! I can't believe it's been a whole year. I hope it's been filled with wonderful memories.\n\nAs a small token, I've left a little something on your doorstep. Thank you again for your trust in me. The biggest compliment I can receive is a referral from a happy client, so please keep me in mind!\n\nAll the best,\n[Your Name]" },
+                    { days: 730, summary: '2-Year "Home Equity Update" Email', template: "Hi [NAME],\n\nHappy 2nd Home Anniversary! I was just looking at the latest stats for [AREA], and homes in your neighbourhood have seen some significant appreciation. I've attached a quick, informal report for you.\n\nNo pressure at all, but if you're ever curious about what this means for your investment, I'm always here for a chat.\n\nBest,\n[Your Name]" },
+                    { days: 1460, summary: '4-Year "Thinking of a change?" Call', template: "Hi [NAME], it's [Your Name]. It's been a while! I was just calling to see how you are and how the home is treating you. You know, people's needs often change around the 4-5 year mark. Have you had any thoughts about your next move, or are you loving it as much as ever?" },
+                    { days: 1825, summary: '5-Year "Major Milestone" Email & Gift', template: "Hi [NAME],\n\nFive years! A huge congratulations on this major milestone in your home. It's been an absolute pleasure to be a small part of your journey.\n\nI'd love to take you out for a coffee sometime soon to catch up properly. My treat! By the way, if you know anyone looking to create their own 5-year milestone, I'd be grateful for an introduction.\n\nBest,\n[Your Name]" },
+                    ...holidayTasks
+                ]},
+                { id: 5, name: 'Past Client - Seller (5-Year Circle of Life)', tasks: [
+                    { days: 30, summary: '"Smooth Move?" Check-in Call', template: "Hi [NAME], it's [Your Name]. Just wanted to check in and see how the move to your new place went. I know how stressful moving day can be! Is everything going well?" },
+                    { days: 180, summary: '6-Month "Referral Ask" Email', template: "Hi [NAME],\n\nHope you're doing wonderfully. I was just thinking about the great result we got on the sale of your home six months ago.\n\nMy business is built on referrals from happy clients like you. If you know of anyone who was impressed with the service you received and might be thinking of selling, I'd be incredibly grateful for an introduction.\n\nBest,\n[Your Name]" },
+                    { days: 365, summary: '1-Year "Sale Anniversary" Text', template: "Hi [NAME], can you believe it's been a year since we sold your home? Time flies! Just wanted to say hello and hope you're doing great. -[Your Name]" },
+                    { days: 730, summary: '2-Year "Market Update" Email', template: "Hi [NAME],\n\nHope you're having a great year. I know you're no longer in the [AREA] area, but I thought you might be interested to see how the market has performed since you sold. I've attached a quick report. It's always interesting to see your investment timing pay off!\n\nAll the best,\n[Your Name]" },
+                    { days: 1460, summary: '4-Year "Life Changes" Call', template: "Hi [NAME], it's [Your Name]. It's been a while! I was just calling to see how you are. Has life brought any big changes? Kids moving out, new job? You never know when your real estate needs might shift again." },
+                    { days: 1825, summary: '5-Year "Thank You" Email', template: "Hi [NAME],\n\nI was just looking back, and it's been five years since we worked together to sell your home. I just wanted to say thank you again for your trust. Clients like you are the reason I love what I do. If you or anyone you know is ever thinking about real estate, I hope you'll think of me.\n\nBest,\n[Your Name]" },
+                    ...holidayTasks
+                ]},
+                { id: 6, name: 'Generic Encounter (e.g., Ribfest)', tasks: [
+                    { days: 1, summary: '"Nice to Meet You" Email', template: "Hi [NAME],\n\nIt was great meeting you at [Event/Location] yesterday! I really enjoyed our chat about [Topic you discussed].\n\nAs I mentioned, I work in real estate here in Hamilton. I'm not sure if you're in the market, but I'm happy to be a resource for you if you ever have any questions. No pressure at all.\n\nI've attached my digital business card for your convenience. Hope to see you around!\n\nBest,\n[Your Name]" },
+                    { days: 14, summary: 'Social Media Connection Request', template: "(Manual Task) Find [NAME] on LinkedIn/Facebook/Instagram and send a connection request with a short message: 'Hey [NAME], great to meet you at [Event] a couple of weeks ago!'" },
+                    { days: 90, summary: 'Quarterly "Community Events" Email', template: "Hi [NAME],\n\nHope you're having a great season. With [upcoming season, e.g., summer] just around the corner, I wanted to share a list of my favourite upcoming events in Hamilton, like the Franco-Fête and the Festival of Friends at Gage Park.\n\n[Link to a blog post or list of events]\n\nJust thought you might find it interesting! \n\nBest,\n[Your Name]" },
+                    { days: 180, summary: '6-Month "AI Creative Touchpoint"', template: "Use the AI Assistant! Ask it for a creative reason to reach out to [NAME], who I met at [Event]. I know they are interested in [Topic from notes]. Give me a casual email script." },
+                    ...holidayTasks
+                ]}
+            ];
+            saveActionPlans();
+        }
+    };
+    
+    const renderActionPlans = () => {
+        planList.innerHTML = '';
+        if (actionPlans.length === 0) {
+            planList.innerHTML = '<p>No Action Plan templates found. Click "New Plan Template" to create one.</p>';
+            return;
+        }
+        actionPlans.sort((a,b) => a.name.localeCompare(b.name)).forEach(plan => {
+            const card = document.createElement('div');
+            card.className = 'card';
+            let tasksHtml = plan.tasks.map(t => {
+                let prefix;
+                // If the task has a specific date, format it nicely (e.g., "Oct 31").
+                if (t.date && t.date.includes('-')) {
+                    const [month, day] = t.date.split('-');
+                    const tempDate = new Date(2000, parseInt(month) - 1, parseInt(day));
+                    const dateString = tempDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                    prefix = `<strong>${dateString}:</strong>`;
+                } else {
+                    // Otherwise, show the day number as before.
+                    prefix = `<strong>Day ${t.days}:</strong>`;
+                }
+                return `<p style="margin: 5px 0;">${prefix} ${t.summary}</p>`;
+            }).join('');
+
+            card.innerHTML = `
+                <div class="card-header"><h3>${plan.name}</h3></div>
+                <div class="card-body">${tasksHtml}</div>
+                <div class="card-footer">
+                    <button class="card-button" data-action="duplicate-plan" data-id="${plan.id}">Duplicate</button>
+                    <button class="card-button primary" data-action="edit-plan" data-id="${plan.id}">Edit Plan</button>
+                </div>
+            `;
+            planList.appendChild(card);
+        });
+    };
+
+    const openPlanEditor = (plan = null) => {
+        planEditorForm.reset();
+        const tasksContainer = document.getElementById('plan-tasks-container');
+        tasksContainer.innerHTML = '';
+        const deleteBtn = document.getElementById('delete-plan-btn');
+
+        if (plan) {
+            document.getElementById('plan-editor-title').textContent = 'Edit Action Plan';
+            document.getElementById('planId').value = plan.id;
+            document.getElementById('planName').value = plan.name;
+            plan.tasks.forEach(task => addTaskRow(task));
+            deleteBtn.style.display = 'block';
+        } else {
+            document.getElementById('plan-editor-title').textContent = 'Create New Action Plan';
+            document.getElementById('planId').value = '';
+            addTaskRow();
+            deleteBtn.style.display = 'none';
+        }
+        openModal(planEditorModal);
+    };
+
+    const addTaskRow = (task = { days: 0, summary: '', template: '', date: '' }) => {
+        const container = document.getElementById('plan-tasks-container');
+        const row = document.createElement('div');
+        row.className = 'plan-task-row';
+        row.innerHTML = `
+            <div class="task-main-inputs">
+                <input type="number" class="task-days" value="${task.days || ''}" min="0" title="Days from start date" placeholder="Days" style="width: 70px;">
+                <span style="font-weight:bold; color: var(--dark-gray); margin: 0 5px;">OR</span>
+                <input type="text" class="task-date" value="${task.date || ''}" placeholder="MM-DD" title="Specific Date (e.g., 10-31 for Oct 31)" style="width: 90px;">
+                <input type="text" class="task-summary" placeholder="Task Summary (e.g., Follow-up call)" value="${task.summary}" required style="flex-grow: 1;">
+                <button type="button" class="delete-row-btn" title="Delete Task">&times;</button>
+            </div>
+            <textarea class="task-template" placeholder="Full email or phone script...">${task.template}</textarea>
+        `;
+        row.querySelector('.delete-row-btn').addEventListener('click', () => row.remove());
+        container.appendChild(row);
+    };
+
+    document.getElementById('add-plan-btn').addEventListener('click', () => openPlanEditor());
+    planList.addEventListener('click', (e) => {
+        const action = e.target.dataset.action;
+        const id = e.target.dataset.id;
+        if (!action || !id) return;
+
+        if (action === 'edit-plan') {
+            const plan = actionPlans.find(p => p.id == id);
+            openPlanEditor(plan);
+        }
+
+        if (action === 'duplicate-plan') {
+            const originalPlan = actionPlans.find(p => p.id == id);
+            if (originalPlan) {
+                // Create a deep copy of the plan object to prevent issues
+                const newPlan = JSON.parse(JSON.stringify(originalPlan));
+                
+                // Assign a new unique ID and update the name
+                newPlan.id = Date.now();
+                newPlan.name = `Copy of ${originalPlan.name}`;
+                
+                // Add the new plan to the array
+                actionPlans.push(newPlan);
+                
+                // Save and re-render the UI to show the new plan
+                saveActionPlans();
+                renderActionPlans();
+            }
+        }
+    });
+    document.getElementById('add-task-btn').addEventListener('click', () => addTaskRow());
+
+    planEditorForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const id = document.getElementById('planId').value;
+        const tasks = [];
+        document.querySelectorAll('#plan-tasks-container .plan-task-row').forEach(row => {
+            const summary = row.querySelector('.task-summary').value;
+            if (summary) {
+                const daysValue = row.querySelector('.task-days').value;
+                const dateValue = row.querySelector('.task-date').value.trim();
+
+                if (dateValue || daysValue) { // A task must have either a date or a day count.
+                    tasks.push({
+                        // If a specific date is used, `days` is ignored by saving it as null.
+                        days: dateValue ? null : parseInt(daysValue, 10),
+                        date: dateValue || null, // Save the "MM-DD" date string.
+                        summary: summary,
+                        template: row.querySelector('.task-template').value
+                    });
+                }
+            }
+        });
+
+        const planData = {
+            name: document.getElementById('planName').value,
+            // Sort by days, pushing specific-date tasks (which have null days) to the end.
+            tasks: tasks.sort((a, b) => (a.days ?? 9999) - (b.days ?? 9999))
+        };
+
+        if (id) {
+            const index = actionPlans.findIndex(p => p.id == id);
+            actionPlans[index] = { ...actionPlans[index], ...planData };
+        } else {
+            planData.id = Date.now();
+            actionPlans.push(planData);
+        }
+        saveActionPlans();
+        renderActionPlans();
+        populateActionPlanDropdown();
+        closeModal(planEditorModal);
+    });
+    
+    document.getElementById('delete-plan-btn').addEventListener('click', () => {
+        const id = document.getElementById('planId').value;
+        if (confirm('Are you sure you want to permanently delete this plan template?')) {
+            actionPlans = actionPlans.filter(p => p.id != id);
+            saveActionPlans();
+            renderActionPlans();
+            populateActionPlanDropdown();
+            closeModal(planEditorModal);
+        }
+    });
+
+    // --- Template & Script Handling ---
+    const mergeTemplate = (template, contact) => {
+        return template
+            .replace(/\[NAME\]/g, contact.fullName || '[Name]')
+            .replace(/\[AREA\]/g, contact.areaOfInterest || '[Area]')
+            .replace(/\[TYPE\]/g, contact.propertyType || '[Property Type]')
+            .replace(/\[Your Name\]/g, 'Your Name')
+            .replace(/\[Your Number\]/g, 'Your Number');
+    };
+
+    const openScriptViewer = (task, contact, taskItem = null, dueDate = null) => {
+        document.getElementById('script-viewer-title').textContent = task.summary;
+        const contentArea = document.getElementById('script-viewer-content');
+        const scriptText = mergeTemplate(task.template, contact);
+        contentArea.textContent = scriptText;
+
+        const modalFooter = document.getElementById('script-viewer-modal').querySelector('.modal-footer');
+        let footerHTML = '';
+
+        if (taskItem) {
+            footerHTML += `<button id="mark-complete-btn" class="add-new-button">Mark as Complete</button>`;
+        }
+        if (contact.email) {
+            const mailtoSubject = encodeURIComponent(task.summary);
+            const mailtoBody = encodeURIComponent(scriptText);
+            footerHTML += `<a href="mailto:${contact.email}?subject=${mailtoSubject}&body=${mailtoBody}" class="add-new-button" style="background-color: var(--green);" target="_blank">Send Email</a>`;
+        }
+        if (contact.phone) {
+            const smsBody = encodeURIComponent(scriptText);
+            footerHTML += `<a href="sms:${contact.phone}?&body=${smsBody}" class="add-new-button" style="background-color: var(--secondary-color);" target="_blank">Send Text</a>`;
+        }
+        footerHTML += `<span class="copy-notification" id="copy-notification">Copied!</span><button id="copy-script-btn" class="add-new-button">Copy to Clipboard</button>`;
+        modalFooter.innerHTML = footerHTML;
+
+        const completeBtn = document.getElementById('mark-complete-btn');
+        if (completeBtn) {
+            completeBtn.addEventListener('click', () => {
+                const contactToUpdate = contact.id ? contacts.find(c => c.id === contact.id) : contacts.find(c => c.fullName === contact.fullName);
+
+                if (contactToUpdate) {
+                    if (!contactToUpdate.activityLog) contactToUpdate.activityLog = [];
+                    // 📌 We now log the original due date along with the completion
+                    contactToUpdate.activityLog.push({
+                        date: new Date().toISOString(),
+                        summary: task.summary,
+                        dueDate: dueDate ? dueDate.toISOString() : null
+                    });
+                    saveContacts();
+
+                    if (taskItem) {
+                        taskItem.querySelector('.task-details').style.textDecoration = 'line-through';
+                        taskItem.style.opacity = '0.6';
+                        const doTaskBtn = taskItem.querySelector('.do-task-btn');
+                        if (doTaskBtn) {
+                            const checkmark = document.createElement('span');
+                            checkmark.style.fontSize = '1.5em';
+                            checkmark.style.color = 'var(--green)';
+                            checkmark.textContent = '✔';
+                            doTaskBtn.replaceWith(checkmark);
+                        }
+                    }
+
+                    closeModal(scriptViewerModal);
+
+                    if (task.transactionId) {
+                        checkAndCloseTransaction(task.transactionId);
+                    }
+                } else {
+                    alert(`Error: Could not find a contact named "${contact.fullName}" to log this activity.`);
+                }
+            });
+        }
+
+        document.getElementById('copy-script-btn').addEventListener('click', () => {
+            navigator.clipboard.writeText(scriptText).then(() => {
+                const notification = document.getElementById('copy-notification');
+                notification.style.display = 'inline';
+                setTimeout(() => { notification.style.display = 'none'; }, 2000);
+            });
+        });
+
+        openModal(scriptViewerModal);
+    };
+
+    // --- Calendar & Task Logic ---
+    const getAllUpcomingTasks = () => {
+        let allTasks = [];
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        // Action Plan & Birthday Tasks
+        contacts.forEach(contact => {
+            if (contact.actionPlanId) {
+                const plan = actionPlans.find(p => p.id == contact.actionPlanId);
+                if (plan && contact.planStartDate) {
+                    const startDate = parseDate(contact.planStartDate);
+                    plan.tasks.forEach(task => {
+                        let taskDate;
+                        if (task.date) {
+                            const [month, day] = task.date.split('-').map(Number);
+                            taskDate = new Date(today.getFullYear(), month - 1, day);
+                            if (taskDate < today) taskDate.setFullYear(today.getFullYear() + 1);
+                        } else {
+                            taskDate = new Date(startDate);
+                            taskDate.setDate(startDate.getDate() + (task.days || 0));
+                        }
+
+                        if (taskDate >= today) {
+                            // 📌 New, more robust completion check
+                            const alreadyCompleted = contact.activityLog?.some(log =>
+                                log.dueDate && new Date(log.dueDate).toDateString() === taskDate.toDateString()
+                            );
+                            if (!alreadyCompleted) {
+                                allTasks.push({ date: taskDate, task, contact });
+                            }
+                        }
+                    });
+                }
+            }
+            if (contact.birthday) {
+                const birthday = new Date(contact.birthday);
+                const thisYearsBirthday = new Date(today.getFullYear(), birthday.getMonth(), birthday.getDate() + 1);
+                if (thisYearsBirthday >= today) {
+                     const alreadyCompleted = contact.activityLog?.some(log =>
+                        log.dueDate && new Date(log.dueDate).toDateString() === thisYearsBirthday.toDateString()
+                    );
+                    if (!alreadyCompleted) {
+                        allTasks.push({ date: thisYearsBirthday, task: { summary: `Wish ${contact.fullName} a Happy Birthday!`, template: `Hi [NAME], just wanted to wish you a very happy birthday! Hope you have a fantastic day. 🎉` }, contact });
+                    }
+                }
+            }
+        });
+
+        // Transaction Tasks
+        transactions.forEach(transaction => {
+            if (transaction.status === 'Active/Conditional' || transaction.status === 'Firm') {
+                const realContact = contacts.find(c => c.fullName === transaction.clientName);
+                const syntheticContact = { fullName: transaction.clientName, propertyAddress: transaction.propertyAddress };
+
+                const allTransactionDeadlines = [
+                    ...transaction.conditions.map(c => ({ name: c.name, date: c.date, type: 'Condition' })),
+                    { name: 'Closing Day', date: transaction.closingDate, type: 'Closing' }
+                ];
+
+                allTransactionDeadlines.forEach(deadline => {
+                    const deadlineDate = parseDate(deadline.date);
+                    if (deadlineDate && deadlineDate >= today) {
+                        const summary = deadline.type === 'Closing' ? `Closing Day for ${transaction.propertyAddress}` : `${deadline.name} Deadline for ${transaction.propertyAddress}`;
+                        
+                        // 📌 New, more robust completion check
+                        const alreadyCompleted = realContact?.activityLog?.some(log =>
+                           log.dueDate && new Date(log.dueDate).toDateString() === deadlineDate.toDateString()
+                        );
+
+                        if (!alreadyCompleted) {
+                            const task = {
+                                summary: summary,
+                                template: `Reminder for ${transaction.clientName}'s transaction at ${transaction.propertyAddress}.\n\nDeadline: ${deadline.name}\nDate: ${deadline.date}`,
+                                transactionId: transaction.id
+                            };
+                            allTasks.push({ date: deadlineDate, task, contact: syntheticContact });
+                        }
+                    }
+                });
+            }
+        });
+
+        return allTasks.sort((a, b) => a.date - b.date);
+    };
+const checkAndCloseTransaction = (transactionId) => {
+        const transaction = transactions.find(t => t.id === transactionId);
+        if (!transaction || transaction.status === 'Closed' || transaction.status === 'Collapsed') return;
+
+        const clientContact = contacts.find(c => c.fullName === transaction.clientName);
+        if (!clientContact || !clientContact.activityLog) return;
+
+        const requiredTasks = transaction.conditions.map(cond => `${cond.name} Deadline for ${transaction.propertyAddress}`);
+        requiredTasks.push(`Closing Day for ${transaction.propertyAddress}`);
+
+        const completedTasksInLog = new Set(clientContact.activityLog.map(log => log.summary));
+        const allTasksComplete = requiredTasks.every(requiredTask => completedTasksInLog.has(requiredTask));
+
+        if (allTasksComplete) {
+            transaction.status = 'Closed';
+            saveTransactions();
+            
+            // If we are on the transaction tab, refresh it to show the change
+            if (document.getElementById('transactions-section').classList.contains('active')) {
+                renderTransactions();
+            }
+        }
+    };
+    const renderCrmDashboard = () => {
+        const allTasks = getAllUpcomingTasks();
+        const todayString = new Date().toDateString();
+
+        // 1. Find all tasks scheduled for today
+        const allTodayTasks = allTasks.filter(t => t.date.toDateString() === todayString);
+        
+        // 2. Separate today's tasks into pending and completed lists
+        const pendingToday = [];
+        const completedToday = [];
+
+        allTodayTasks.forEach(taskData => {
+            const { contact, task } = taskData;
+            const isCompleted = contact.activityLog?.some(log => 
+                new Date(log.date).toDateString() === todayString && log.summary === task.summary
+            );
+            if (isCompleted) {
+                completedToday.push(taskData);
+            } else {
+                pendingToday.push(taskData);
+            }
+        });
+
+        // 3. Render the "To-Do" list
+        todaysTasksList.innerHTML = '';
+        if (pendingToday.length > 0) {
+            pendingToday.forEach(({task, contact}) => {
+                const taskItem = document.createElement('div');
+                taskItem.className = 'task-item';
+                taskItem.innerHTML = `
+                    <div class="task-details">
+                        <strong>${task.summary}</strong><br>
+                        <span>For: ${contact.fullName}</span>
+                    </div>
+                    <button class="card-button primary do-task-btn">Do Task</button>
+                `;
+                taskItem.querySelector('.do-task-btn').addEventListener('click', () => openScriptViewer(task, contact, taskItem));
+                todaysTasksList.appendChild(taskItem);
+            });
+        } else {
+            todaysTasksList.innerHTML = '<p>No tasks left for today. Great job!</p>';
+        }
+
+        // 4. Render the "Completed Today" list
+        const completedList = document.getElementById('completed-tasks-list');
+        const completedHeader = document.getElementById('completed-header');
+        completedList.innerHTML = '';
+        if (completedToday.length > 0) {
+            completedHeader.style.display = 'block';
+            completedToday.forEach(({task, contact}) => {
+                const taskItem = document.createElement('div');
+                taskItem.className = 'task-item';
+                taskItem.style.opacity = '0.6';
+                taskItem.innerHTML = `
+                    <div class="task-details" style="text-decoration: line-through;">
+                        <strong>${task.summary}</strong><br>
+                        <span>For: ${contact.fullName}</span>
+                    </div>
+                    <span style="font-size: 1.5em; color: var(--green);">✔</span>
+                `;
+                completedList.appendChild(taskItem);
+            });
+        } else {
+            completedHeader.style.display = 'none';
+        }
+
+        renderContacts();
+        populateContactFilter();
+    };
+    
+    const renderCalendarView = () => {
+        calendarViewContainer.innerHTML = '';
+        const allTasks = getAllUpcomingTasks();
+        const yearFromNow = new Date();
+        yearFromNow.setDate(yearFromNow.getDate() + 365);
+
+        const upcomingTasks = allTasks.filter(t => t.date <= yearFromNow);
+        if (upcomingTasks.length === 0) {
+            calendarViewContainer.innerHTML = '<p>No tasks scheduled for the next 365 days.</p>';
+            return;
+        }
+
+        const tasksByDay = upcomingTasks.reduce((acc, taskData) => {
+            const dayString = taskData.date.toDateString();
+            if (!acc[dayString]) {
+                acc[dayString] = [];
+            }
+            acc[dayString].push(taskData);
+            return acc;
+        }, {});
+
+        for (const dayString in tasksByDay) {
+            const dayDiv = document.createElement('div');
+            dayDiv.className = 'calendar-day';
+            const dayHeader = document.createElement('h3');
+            dayHeader.textContent = dayString;
+            dayDiv.appendChild(dayHeader);
+
+            tasksByDay[dayString].forEach(({ date, task, contact }) => {
+                const taskItem = document.createElement('div');
+                taskItem.className = 'task-item';
+                taskItem.innerHTML = `
+                    <div class="task-details">
+                        <strong>${task.summary}</strong><br>
+                        <span>For: ${contact.fullName}</span>
+                    </div>
+                    <button class="card-button primary do-task-btn">Do Task</button>
+                `;
+                // 📌 Here we now pass the task's due date ('date') to the viewer function
+                taskItem.querySelector('.do-task-btn').addEventListener('click', () => openScriptViewer(task, contact, taskItem, date));
+                dayDiv.appendChild(taskItem);
+            });
+            calendarViewContainer.appendChild(dayDiv);
+        }
+    };
+
+    const renderContacts = () => {
+        const filterValue = contactStatusFilter.value;
+        const filteredContacts = (filterValue === 'all') ? contacts : contacts.filter(c => c.contactStatus === filterValue);
+                contactList.innerHTML = '';
+        filteredContacts.sort((a,b) => a.fullName.localeCompare(b.fullName)).forEach(contact => {
+            const card = document.createElement('div');
+            card.className = 'card';
+            card.innerHTML = `
+                <div class="card-header"><h3>${contact.fullName}</h3></div>
+                <div class="card-body">
+                    <p>📧 ${contact.email || 'N/A'}</p>
+                    <p>📞 ${contact.phone || 'N/A'}</p>
+                </div>
+                <div class="card-footer">
+                    <button class="card-button" data-action="edit-contact" data-id="${contact.id}">Edit</button>
+                    <button class="card-button" data-action="suggest-action" data-id="${contact.id}" style="background-color: var(--primary-color); color: var(--white); border-color: var(--primary-color);">✨ Suggest Action</button>
+                    <button class="card-button primary" data-action="transact" data-id="${contact.id}">+ Transaction</button>
+                </div>
+            `;
+            contactList.appendChild(card);
+        });
+    };
+
+    // --- Contact Modal & Form Logic ---
+    const openContactModal = (contact = null) => {
+        contactForm.reset();
+        populateActionPlanDropdown();
+        const logContainer = document.getElementById('activity-log-container');
+        const logScroll = document.getElementById('activity-log-scroll');
+
+        if (contact) {
+            document.getElementById('contact-modal-title').textContent = 'Edit Contact';
+            document.getElementById('delete-contact-btn').style.display = 'block';
+            Object.keys(contact).forEach(key => {
+                const el = document.getElementById(key);
+                if (el) el.value = contact[key];
+            });
+            document.getElementById('contactId').value = contact.id;
+
+            // Display the activity log if it exists
+            if (contact.activityLog && contact.activityLog.length > 0) {
+                logContainer.style.display = 'block';
+                logScroll.innerHTML = '';
+                // Sort the log with the most recent entries first
+                contact.activityLog.sort((a,b) => new Date(b.date) - new Date(a.date)).forEach(log => {
+                    const logItem = document.createElement('div');
+                    logItem.className = 'activity-log-item';
+                    const logDate = new Date(log.date).toLocaleDateString('en-CA', { year: 'numeric', month: 'short', day: 'numeric' });
+                    logItem.innerHTML = `<p style="margin:0; font-weight: bold;">${log.summary}</p><span>${logDate}</span>`;
+                    logScroll.appendChild(logItem);
+                });
+            } else {
+                logContainer.style.display = 'none';
+            }
+        } else {
+            document.getElementById('contact-modal-title').textContent = 'New Contact';
+            document.getElementById('delete-contact-btn').style.display = 'none';
+            document.getElementById('contactId').value = '';
+            document.getElementById('planStartDate').value = getTodayString();
+            logContainer.style.display = 'none'; // Hide log for new contacts
+        }
+        openModal(contactModal);
+    };
+
+    document.getElementById('add-contact-btn').addEventListener('click', () => openContactModal());
+    contactList.addEventListener('click', e => {
+        const action = e.target.dataset.action;
+        const id = e.target.dataset.id;
+        if (!action || !id) return;
+
+        const contact = contacts.find(c => c.id == id);
+        if (!contact) return;
+
+        if (action === 'edit-contact') {
+            openContactModal(contact);
+        } else if (action === 'transact') {
+            openTransactionModal(null, contact);
+        } else if (action === 'suggest-action') {
+            if (!GEMINI_API_KEY || GEMINI_API_KEY === "PASTE_YOUR_KEY_HERE") {
+                alert("Please add your Gemini API Key at the top of the script to use the AI features.");
+                return;
+            }
+            const lastActivity = contact.activityLog && contact.activityLog.length > 0 ?
+                contact.activityLog.sort((a, b) => new Date(b.date) - new Date(a.date))[0] : null;
+            const lastActivityString = lastActivity ? `The last recorded activity was '${lastActivity.summary}' on ${new Date(lastActivity.date).toLocaleDateString()}.` : 'There has been no recorded activity with this contact yet.';
+
+            const prompt = `I am a real estate agent. Please suggest the next best action and write a short, casual script (for text or email) for me to send to a contact. Be creative, personal, and add value.
+
+Today's Date: ${new Date().toLocaleDateString()}
+
+Here is the contact's information:
+${JSON.stringify({ fullName: contact.fullName, contactStatus: contact.contactStatus, email: contact.email, phone: contact.phone, areaOfInterest: contact.areaOfInterest, propertyType: contact.propertyType, source: contact.source, notes: contact.notes }, null, 2)}
+
+${lastActivityString}
+
+Based on all this information, what is a single, value-added, non-pushy next step? Provide the reason for your suggestion and the full script.`;
+
+            const responseArea = document.getElementById('ai-response-area');
+            const generateBtnText = document.getElementById('ai-generate-text');
+            const spinner = document.getElementById('ai-loading-spinner');
+            document.getElementById('ai-prompt').value = "Generating suggestion for " + contact.fullName + "...";
+            openModal(aiAssistantModal);
+
+            (async () => {
+                generateBtnText.style.display = 'none';
+                spinner.style.display = 'block';
+                responseArea.textContent = 'Analyzing contact and generating suggestion...';
+                try {
+                    let chatHistory = [{ role: "user", parts: [{ text: prompt }] }];
+                    const payload = { contents: chatHistory };
+                    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${GEMINI_API_KEY}`;
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    if (!response.ok) throw new Error(`API request failed with status ${response.status}`);
+                    const result = await response.json();
+                    if (result.candidates && result.candidates[0]?.content?.parts[0]?.text) {
+                        responseArea.textContent = result.candidates[0].content.parts[0].text;
+                    } else {
+                        responseArea.textContent = 'Sorry, the AI response was empty. Please try again.';
+                    }
+                } catch (error) {
+                    console.error("AI Assistant Error:", error);
+                    responseArea.textContent = `An error occurred: ${error.message}. Please check the console for details.`;
+                } finally {
+                    generateBtnText.style.display = 'inline';
+                    spinner.style.display = 'none';
+                }
+            })();
+        }
+    });
+
+    contactForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const id = document.getElementById('contactId').value;
+        const contactData = {
+            fullName: document.getElementById('fullName').value,
+            contactStatus: document.getElementById('contactStatus').value,
+            email: document.getElementById('email').value,
+            phone: document.getElementById('phone').value,
+            areaOfInterest: document.getElementById('areaOfInterest').value,
+            propertyType: document.getElementById('propertyType').value,
+            planStartDate: document.getElementById('planStartDate').value,
+            birthday: document.getElementById('birthday').value,
+            source: document.getElementById('source').value,
+            actionPlanId: document.getElementById('actionPlanId').value,
+            notes: document.getElementById('notes').value,
+        };
+
+        let savedContact;
+        if (id) {
+            const index = contacts.findIndex(c => c.id == id);
+            // Preserve the existing activity log when updating a contact
+            contactData.activityLog = contacts[index].activityLog || [];
+            contacts[index] = { id: Number(id), ...contactData };
+            savedContact = contacts[index];
+        } else {
+            contactData.id = Date.now();
+            // Initialize an empty activity log for all new contacts
+            contactData.activityLog = [];
+            contacts.push(contactData);
+            savedContact = contactData;
+        }
+        saveContacts();
+        renderCrmDashboard();
+        closeModal(contactModal);
+                const downloadIcsBtn = document.getElementById('download-ics-btn');
+        const downloadVcfBtn = document.getElementById('download-vcf-btn');
+                const newVcfBtn = downloadVcfBtn.cloneNode(true);
+        downloadVcfBtn.parentNode.replaceChild(newVcfBtn, downloadVcfBtn);
+        newVcfBtn.addEventListener('click', () => generateVcfFile(savedContact));
+
+        const newIcsBtn = downloadIcsBtn.cloneNode(true);
+        downloadIcsBtn.parentNode.replaceChild(newIcsBtn, downloadIcsBtn);
+        if (savedContact.actionPlanId) {
+            newIcsBtn.style.display = 'inline-block';
+            newIcsBtn.addEventListener('click', () => generateIcsFile(savedContact.actionPlanId, savedContact));
+        } else {
+            newIcsBtn.style.display = 'none';
+        }
+        openModal(postSaveModal);
+    });
+
+    document.getElementById('delete-contact-btn').addEventListener('click', () => {
+        const id = document.getElementById('contactId').value;
+        if (confirm('Are you sure you want to delete this contact?')) {
+            contacts = contacts.filter(c => c.id != Number(id));
+            saveContacts();
+            renderCrmDashboard();
+            closeModal(contactModal);
+        }
+    });
+
+    const populateActionPlanDropdown = () => {
+        actionPlanSelect.innerHTML = '<option value="">None</option>';
+        actionPlans.forEach(plan => {
+            const option = document.createElement('option');
+            option.value = plan.id;
+            option.textContent = plan.name;
+            actionPlanSelect.appendChild(option);
+        });
+    };
+
+    const populateContactFilter = () => {
+        const statuses = [...new Set(contacts.map(c => c.contactStatus))];
+        contactStatusFilter.innerHTML = '<option value="all">All Contacts</option>';
+        statuses.sort().forEach(status => {
+            const option = document.createElement('option');
+            option.value = status;
+            option.textContent = status;
+            contactStatusFilter.appendChild(option);
+        });
+    };
+    contactStatusFilter.addEventListener('change', renderContacts);
+
+    // --- Transaction Logic ---
+    const findNextTransactionDeadline = (t) => {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        if (t.status === 'Closed' || t.status === 'Collapsed') {
+            return { label: t.status, days: Infinity, class: 'closed' };
+        }
+
+        const potentialDeadlines = t.conditions
+            .map(c => ({ label: c.name, date: parseDate(c.date) }))
+            .filter(d => d.date && d.date >= today);
+        
+        potentialDeadlines.push({ label: 'Closing Day', date: parseDate(t.closingDate) });
+
+        if (potentialDeadlines.length === 0) {
+             return { label: 'Closing Passed', days: -1, class: 'firm' };
+        }
+
+        potentialDeadlines.sort((a,b) => a.date - b.date);
+        const next = potentialDeadlines[0];
+        const days = daysUntil(next.date);
+
+        let className = 'safe';
+        if (days <= 2) className = 'urgent';
+        else if (days <= 7) className = 'soon';
+
+        return { label: next.label, days, class: className };
+    };
+
+    const renderTransactions = () => {
+        transactionList.innerHTML = '';
+        if (transactions.length === 0) {
+            transactionList.innerHTML = '<p>No active transactions.</p>';
+            return;
+        }
+        transactions.sort((a,b) => {
+            const deadlineA = findNextTransactionDeadline(a);
+            const deadlineB = findNextTransactionDeadline(b);
+            return deadlineA.days - deadlineB.days;
+        }).forEach(t => {
+            const card = document.createElement('div');
+            card.className = 'card';
+            const deadline = findNextTransactionDeadline(t);
+            let deadlineText = `${deadline.label} in ${deadline.days} days`;
+            if(deadline.days === Infinity) deadlineText = deadline.label;
+            if(deadline.days < 0) deadlineText = deadline.label;
+            if(deadline.days === 0) deadlineText = `${deadline.label} TODAY`;
+            if(deadline.days === 1) deadlineText = `${deadline.label} TOMORROW`;
+
+            // Create the footer with the new buttons
+            let footerHTML = `<button class="card-button" data-action="view-contact" data-client-name="${t.clientName}">View Contact</button>`;
+            if (t.documentLink) {
+                footerHTML += `<a href="${t.documentLink}" target="_blank" class="card-button" style="background-color: var(--yellow); color: #2c3e50; border-color: var(--yellow);">Open Folder</a>`;
+            }
+            footerHTML += `<button class="card-button primary" data-action="edit-transaction" data-id="${t.id}">Edit Details</button>`;
+
+            card.innerHTML = `
+                <div class="card-header"><h3>${t.propertyAddress}</h3></div>
+                <div class="card-body">
+                    <p><strong>Client:</strong> ${t.clientName}</p>
+                    <p><strong>Status:</strong> ${t.status}</p>
+                    <p><strong>Closing:</strong> ${t.closingDate}</p>
+                </div>
+                <div class="deadline ${deadline.class}">${deadlineText}</div>
+                <div class="card-footer">${footerHTML}</div>
+            `;
+            transactionList.appendChild(card);
+        });
+    };
+
+    const openTransactionModal = (transaction = null, contact = null) => {
+        transactionForm.reset();
+        const conditionsContainer = document.getElementById('transaction-conditions-container');
+        conditionsContainer.innerHTML = '';
+        const deleteBtn = document.getElementById('delete-transaction-btn');
+
+        if (transaction) {
+            document.getElementById('transaction-modal-title').textContent = 'Edit Transaction';
+            deleteBtn.style.display = 'block';
+            document.getElementById('transactionId').value = transaction.id;
+            document.getElementById('t-propertyAddress').value = transaction.propertyAddress;
+            document.getElementById('t-clientName').value = transaction.clientName;
+            document.getElementById('t-representation').value = transaction.representation;
+            document.getElementById('t-acceptanceDate').value = transaction.acceptanceDate;
+            document.getElementById('t-closingDate').value = transaction.closingDate;
+            document.getElementById('t-transactionStatus').value = transaction.status;
+            document.getElementById('t-documentLink').value = transaction.documentLink || ''; // Load the document link
+            if (transaction.conditions) {
+                transaction.conditions.forEach(cond => addTransactionConditionRow(cond));
+            }
+        } else {
+            document.getElementById('transaction-modal-title').textContent = 'New Transaction';
+            deleteBtn.style.display = 'none';
+            document.getElementById('transactionId').value = '';
+            document.getElementById('t-acceptanceDate').value = getTodayString();
+            if (contact) {
+                document.getElementById('t-clientName').value = contact.fullName;
+            }
+            addTransactionConditionRow({ name: 'Financing', date: '' });
+            addTransactionConditionRow({ name: 'Inspection', date: '' });
+        }
+        openModal(transactionModal);
+    };
+
+    const addTransactionConditionRow = (condition = { name: '', date: '' }) => {
+        const container = document.getElementById('transaction-conditions-container');
+        const row = document.createElement('div');
+        row.className = 'editor-row';
+        row.innerHTML = `
+            <input type="text" class="condition-name" placeholder="Condition Name" value="${condition.name}" required>
+            <input type="date" class="condition-date" value="${condition.date}" required>
+            <button type="button" class="delete-row-btn" title="Delete Condition">&times;</button>
+        `;
+        row.querySelector('.delete-row-btn').addEventListener('click', () => row.remove());
+        container.appendChild(row);
+    };
+
+    document.getElementById('add-transaction-btn').addEventListener('click', () => openTransactionModal());
+    document.getElementById('add-condition-btn').addEventListener('click', () => addTransactionConditionRow());
+    transactionList.addEventListener('click', e => {
+        const action = e.target.dataset.action;
+        if (!action) return;
+
+        if (action === 'edit-transaction') {
+            const transaction = transactions.find(t => t.id == e.target.dataset.id);
+            if (transaction) openTransactionModal(transaction);
+        } else if (action === 'view-contact') {
+            const clientName = e.target.dataset.clientName;
+            const contact = contacts.find(c => c.fullName === clientName);
+            if (contact) {
+                switchView('crm');
+                openContactModal(contact);
+            } else {
+                alert(`Contact "${clientName}" was not found in your CRM.`);
+            }
+        }
+    });
+
+    transactionForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const id = document.getElementById('transactionId').value;
+        const conditions = [];
+        document.querySelectorAll('#transaction-conditions-container .editor-row').forEach(row => {
+            const name = row.querySelector('.condition-name').value;
+            const date = row.querySelector('.condition-date').value;
+            if(name && date) {
+                conditions.push({ name, date });
+            }
+        });
+
+        const data = {
+            id: id ? Number(id) : Date.now(),
+            propertyAddress: document.getElementById('t-propertyAddress').value,
+            clientName: document.getElementById('t-clientName').value,
+            representation: document.getElementById('t-representation').value,
+            acceptanceDate: document.getElementById('t-acceptanceDate').value,
+            closingDate: document.getElementById('t-closingDate').value,
+            status: document.getElementById('t-transactionStatus').value,
+            documentLink: document.getElementById('t-documentLink').value, // Save the document link
+            conditions: conditions
+        };
+
+        if (id) {
+            const index = transactions.findIndex(t => t.id == id);
+            transactions[index] = data;
+        } else {
+            transactions.push(data);
+        }
+        saveTransactions();
+        renderTransactions();
+        closeModal(transactionModal);
+    });
+
+    document.getElementById('delete-transaction-btn').addEventListener('click', () => {
+        const id = document.getElementById('transactionId').value;
+        if (confirm('Are you sure you want to delete this transaction?')) {
+            transactions = transactions.filter(t => t.id != id);
+            saveTransactions();
+            renderTransactions();
+            closeModal(transactionModal);
+        }
+    });
+
+    // --- File Generation & Export Logic ---
+    const generateVcfFile = (contactData) => {
+        const { fullName, phone, email } = contactData;
+        const nameParts = fullName.split(' ');
+        const lastName = nameParts.pop() || '';
+        const firstName = nameParts.join(' ') || '';
+
+        let vcfContent = ['BEGIN:VCARD', 'VERSION:3.0', `N:${lastName};${firstName};;;`, `FN:${fullName}`, `TEL;TYPE=CELL:${phone || ''}`, `EMAIL:${email || ''}`, 'END:VCARD'].join('\r\n');
+        const blob = new Blob([vcfContent], { type: 'text/vcard' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = `${fullName}.vcf`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
+    const generateIcsFile = (planId, contactData) => {
+        const plan = actionPlans.find(p => p.id == planId);
+        if (!plan) return;
+
+        const startDate = parseDate(contactData.planStartDate);
+        const toIcsDate = (date) => date.toISOString().split('T')[0].replace(/-/g, '');
+        const escapeIcsText = (text) => text.replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\n/g, '\\n');
+        const googleSearchUrl = `https://contacts.google.com/search/${encodeURIComponent(contactData.fullName)}`;
+
+        let icsContent = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Your Real Estate Hub//EN'];
+
+        plan.tasks.forEach(task => {
+            const eventDate = new Date(startDate);
+            eventDate.setDate(eventDate.getDate() + task.days);
+            const eventStartDate = toIcsDate(eventDate);
+            const summary = escapeIcsText(task.summary.replace(/\[NAME\]/g, contactData.fullName));
+            const uid = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}@yourhub.com`;
+            let description = 'Contact Info:\\n';
+            if (contactData.phone) description += `Phone: ${contactData.phone}\\n`;
+            if (contactData.email) description += `Email: ${contactData.email}\\n`;
+            if (contactData.notes) description += `\\nNotes:\\n${escapeIcsText(contactData.notes)}\\n`;
+            description += `\\n---\\nFind in Google Contacts: ${googleSearchUrl}`;
+            icsContent.push('BEGIN:VEVENT', `DTSTAMP:${new Date().toISOString().replace(/[-:.]/g, '')}Z`, `UID:${uid}`, `DTSTART;VALUE=DATE:${eventStartDate}`, `SUMMARY:${summary}`, `DESCRIPTION:${description}`, 'END:VEVENT');
+        });
+
+        icsContent.push('END:VCALENDAR');
+        const blob = new Blob([icsContent.join('\r\n')], { type: 'text/calendar' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = `Action Plan for ${contactData.fullName}.ics`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+    
+    const exportCalendarToCsv = () => {
+        const allTasks = getAllUpcomingTasks();
+        if (allTasks.length === 0) {
+            alert("No upcoming tasks to export.");
+            return;
+        }
+        const headers = ['Subject', 'Start Date', 'All Day Event'];
+        const csvRows = [headers.join(',')];
+        allTasks.forEach(({date, task, contact}) => {
+            const subject = mergeTemplate(task.summary, contact);
+            const startDate = `${date.getMonth() + 1}/${date.getDate()}/${date.getFullYear()}`;
+            csvRows.push(`"${subject}","${startDate}","True"`);
+        });
+        const csvString = csvRows.join('\r\n');
+        const blob = new Blob([csvString], { type: 'text/csv' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = 'Calendar_Export.csv';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+    
+    const exportCalendarToIcs = () => {
+        const allTasks = getAllUpcomingTasks();
+        if (allTasks.length === 0) {
+            alert("No upcoming tasks to export.");
+            return;
+        }
+        const toIcsDate = (date) => date.toISOString().split('T')[0].replace(/-/g, '');
+        const escapeIcsText = (text) => text.replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\n/g, '\\n');
+        
+        let icsContent = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Your Real Estate Hub//EN'];
+
+        allTasks.forEach(({date, task, contact}) => {
+            const summary = escapeIcsText(mergeTemplate(task.summary, contact));
+            
+            const googleSearchUrl = `https://contacts.google.com/search/${encodeURIComponent(contact.fullName)}`;
+            let description = 'Contact Info:\\n';
+            if (contact.phone) description += `Phone: ${contact.phone}\\n`;
+            if (contact.email) description += `Email: ${contact.email}\\n`;
+            if (contact.notes) description += `\\nNotes:\\n${escapeIcsText(contact.notes)}\\n`;
+            description += `\\n---\\nFull Script:\\n${escapeIcsText(mergeTemplate(task.template, contact))}\\n`;
+            description += `\\n---\\nFind in Google Contacts: ${googleSearchUrl}`;
+
+            const uid = `${date.getTime()}-${contact.id || contact.fullName}@yourhub.com`;
+            const eventStartDate = toIcsDate(date);
+            icsContent.push('BEGIN:VEVENT', `DTSTAMP:${new Date().toISOString().replace(/[-:.]/g, '')}Z`, `UID:${uid}`, `DTSTART;VALUE=DATE:${eventStartDate}`, `SUMMARY:${summary}`, `DESCRIPTION:${description}`, 'END:VEVENT');
+        });
+
+        icsContent.push('END:VCALENDAR');
+        const blob = new Blob([icsContent.join('\r\n')], { type: 'text/calendar' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = 'Full_Action_Plan_Calendar.ics';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
+    document.getElementById('export-calendar-csv-btn').addEventListener('click', exportCalendarToCsv);
+    document.getElementById('export-calendar-ics-btn').addEventListener('click', exportCalendarToIcs);
+
+    const exportToCsv = (data, filename, isGoogleFormat = false) => {
+        let dataToExport = data;
+        if (isGoogleFormat) {
+            const filterValue = contactStatusFilter.value;
+            dataToExport = (filterValue === 'all') ? contacts : contacts.filter(c => c.contactStatus === filterValue);
+        }
+
+        if (dataToExport.length === 0) {
+            alert("No data to export for the current filter.");
+            return;
+        }
+        
+        let headers, csvRows;
+
+        if (isGoogleFormat) {
+            headers = ['Name', 'Given Name', 'Family Name', 'E-mail 1 - Type', 'E-mail 1 - Value', 'Phone 1 - Type', 'Phone 1 - Value', 'Notes'];
+            csvRows = [headers.join(',')];
+            dataToExport.forEach(row => {
+                const nameParts = (row.fullName || '').split(' ');
+                const givenName = nameParts.shift() || '';
+                const familyName = nameParts.join(' ') || '';
+                const values = [
+                    row.fullName || '',
+                    givenName,
+                    familyName,
+                    'Home',
+                    row.email || '',
+                    'Mobile',
+                    row.phone || '',
+                    row.notes || ''
+                ].map(val => `"${(val || '').replace(/"/g, '""')}"`);
+                csvRows.push(values.join(','));
+            });
+        } else {
+            headers = Object.keys(dataToExport[0]);
+            csvRows = [headers.join(',')];
+            dataToExport.forEach(row => {
+                const values = headers.map(header => {
+                    let val = row[header];
+                    if (typeof val === 'object' && val !== null) {
+                        val = JSON.stringify(val);
+                    }
+                    const escaped = ('' + (val || '')).replace(/"/g, '""');
+                    return `"${escaped}"`;
+                });
+                csvRows.push(values.join(','));
+            });
+        }
+        
+        const csvString = csvRows.join('\r\n');
+        const blob = new Blob([csvString], { type: 'text/csv' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
+    document.getElementById('export-contacts-csv-btn').addEventListener('click', () => exportToCsv(contacts, 'google_contacts.csv', true));
+    document.getElementById('export-transactions-csv-btn').addEventListener('click', () => exportToCsv(transactions, 'transactions.csv'));
+    
+    // --- Backup & Restore Logic ---
+    const backupAllData = () => {
+        const allData = {
+            contacts: contacts,
+            transactions: transactions,
+            actionPlans: actionPlans
+        };
+        const jsonString = JSON.stringify(allData, null, 2);
+        const blob = new Blob([jsonString], { type: 'application/json' });
+        const link = document.createElement('a');
+        const dateString = new Date().toISOString().split('T')[0];
+        link.href = URL.createObjectURL(blob);
+        link.download = `RealEstateHub_Backup_${dateString}.json`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
+    const restoreAllData = (event) => {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const data = JSON.parse(e.target.result);
+                if (confirm("Are you sure you want to overwrite all existing data with this backup? This action cannot be undone.")) {
+                    contacts = data.contacts || [];
+                    transactions = data.transactions || [];
+                    actionPlans = data.actionPlans || [];
+                    saveContacts();
+                    saveTransactions();
+                    saveActionPlans();
+                    alert("Data restored successfully!");
+                    switchView('crm');
+                }
+            } catch (error) {
+                alert("Error reading backup file. Please ensure it is a valid JSON backup from this application.");
+                console.error("Restore error:", error);
+            }
+        };
+        reader.readAsText(file);
+        event.target.value = '';
+    };
+
+    document.getElementById('backup-all-btn').addEventListener('click', backupAllData);
+    document.getElementById('restore-all-btn').addEventListener('click', () => document.getElementById('restore-file-input').click());
+    document.getElementById('restore-file-input').addEventListener('change', restoreAllData);
+
+    const importContactsFromCsv = (event) => {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const text = e.target.result;
+            const rows = text.split('\n').map(row => row.split(','));
+            const headers = rows[0].map(h => h.trim().replace(/"/g, ''));
+            
+            const nameIndex = headers.indexOf('Name');
+            const givenNameIndex = headers.indexOf('Given Name');
+            const firstNameIndex = headers.indexOf('First Name');
+            const familyNameIndex = headers.indexOf('Family Name');
+            const lastNameIndex = headers.indexOf('Last Name');
+            const emailIndex = headers.indexOf('E-mail 1 - Value');
+            const phoneIndex = headers.indexOf('Phone 1 - Value');
+            
+            if (nameIndex === -1 && givenNameIndex === -1 && firstNameIndex === -1) {
+                alert("CSV must contain a 'Name', 'Given Name', or 'First Name' column.");
+                return;
+            }
+
+            const newContacts = [];
+            for (let i = 1; i < rows.length; i++) {
+                const row = rows[i];
+                if (row.length < headers.length) continue;
+
+                let fullName;
+                if (nameIndex > -1) {
+                    fullName = row[nameIndex];
+                } else {
+                    const first = row[firstNameIndex] || row[givenNameIndex] || '';
+                    const last = row[lastNameIndex] || row[familyNameIndex] || '';
+                    fullName = `${first} ${last}`.trim();
+                }
+
+                if (!fullName) continue;
+
+                newContacts.push({
+                    id: Date.now() + i,
+                    fullName: fullName.replace(/"/g, ''),
+                    email: emailIndex > -1 ? row[emailIndex].replace(/"/g, '') : '',
+                    phone: phoneIndex > -1 ? row[phoneIndex].replace(/"/g, '') : '',
+                    contactStatus: 'New Lead',
+                    planStartDate: getTodayString(),
+                    areaOfInterest: '',
+                    propertyType: '',
+                    birthday: '',
+                    source: 'CSV Import',
+                    actionPlanId: '',
+                    notes: 'Imported from Google CSV.'
+                });
+            }
+
+            if (confirm(`Found ${newContacts.length} contacts. Do you want to add them to your list?`)) {
+                contacts.push(...newContacts);
+                saveContacts();
+                renderCrmDashboard();
+                alert(`${newContacts.length} contacts imported successfully!`);
+            }
+        };
+        reader.readAsText(file);
+        event.target.value = '';
+    };
+
+    document.getElementById('import-contacts-csv-btn').addEventListener('click', () => document.getElementById('import-contacts-file-input').click());
+    document.getElementById('import-contacts-file-input').addEventListener('change', importContactsFromCsv);
+
+
+    // --- AI Assistant Logic ---
+    document.getElementById('ai-fab').addEventListener('click', () => openModal(aiAssistantModal));
+    aiForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        if (!GEMINI_API_KEY || GEMINI_API_KEY === "PASTE_YOUR_KEY_HERE") {
+            alert("Please add your Gemini API Key at the top of the script to use the AI features.");
+            return;
+        }
+        const prompt = document.getElementById('ai-prompt').value;
+        if (!prompt) return;
+
+        const responseArea = document.getElementById('ai-response-area');
+        const generateBtnText = document.getElementById('ai-generate-text');
+        const spinner = document.getElementById('ai-loading-spinner');
+
+        generateBtnText.style.display = 'none';
+        spinner.style.display = 'block';
+        responseArea.textContent = 'Generating...';
+
+        try {
+            let chatHistory = [{ role: "user", parts: [{ text: prompt }] }];
+            const payload = { contents: chatHistory };
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${GEMINI_API_KEY}`;
+            const response = await fetch(apiUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (!response.ok) {
+                throw new Error(`API request failed with status ${response.status}`);
+            }
+
+            const result = await response.json();
+            if (result.candidates && result.candidates[0]?.content?.parts[0]?.text) {
+                responseArea.textContent = result.candidates[0].content.parts[0].text;
+            } else {
+                responseArea.textContent = 'Sorry, I could not get a response. The response from the AI was empty. Please try again.';
+            }
+        } catch (error) {
+            console.error("AI Assistant Error:", error);
+            responseArea.textContent = `An error occurred: ${error.message}. Please check the console for details.`;
+        } finally {
+            generateBtnText.style.display = 'inline';
+            spinner.style.display = 'none';
+        }
+    });
+
+    // --- Initial Load ---
+    const loadData = () => {
+        contacts = JSON.parse(localStorage.getItem('rehub_contacts_v6')) || [];
+        transactions = JSON.parse(localStorage.getItem('rehub_transactions_v6')) || [];
+        loadActionPlans();
+    };
+const integrateWithDashboard = () => {
+        if (!contacts && !transactions) {
+            alert("No CRM data found to analyze.");
+            return;
+        }
+
+        alert("Preparing to send data to the Performance Dashboard. This will overwrite the dashboard's current data. Click OK to proceed.");
+
+        const dashboardLogEntries = [];
+        const dashboardGoals = {}; // You can set default goals here if needed
+
+        // 1. Convert Contacts to "Daily Contacts" log entries
+        const contactsByDate = contacts.reduce((acc, contact) => {
+            const date = contact.planStartDate || new Date(contact.id).toISOString().split('T')[0];
+            const source = contact.source || 'Other';
+            if (!acc[date]) {
+                acc[date] = {};
+            }
+            if (!acc[date][source]) {
+                acc[date][source] = 0;
+            }
+            acc[date][source]++;
+            return acc;
+        }, {});
+
+        for (const date in contactsByDate) {
+            for (const source in contactsByDate[date]) {
+                dashboardLogEntries.push({
+                    id: Date.now() + Math.random(),
+                    date: date,
+                    eventType: 'Daily Contacts',
+                    leadSource: source,
+                    contacts: contactsByDate[date][source],
+                    notes: `Contacts imported from CRM.`
+                });
+            }
+        }
+
+        // 2. Convert Transactions to "Sale" log entries
+        transactions.forEach(t => {
+            // For now, we'll assume a static commission/split.
+            // This could be made more advanced later if you store financial data in your CRM.
+            const commissionRate = 2.5;
+            const brokerSplit = 25; // Example 25%
+            const brokerFee = 500; // Example $500
+            const otherExpenses = 1000; // Example for staging, photos etc.
+
+            if (t.status === 'Closed') {
+                const homeValue = 750000; // Placeholder value, as this isn't in your CRM transaction data
+                const grossCommission = (homeValue * commissionRate) / 100;
+                
+                dashboardLogEntries.push({
+                    id: Date.now() + Math.random(),
+                    date: t.closingDate,
+                    eventType: 'Sale',
+                    leadSource: 'CRM Transaction',
+                    homeValue: homeValue,
+                    commissionRate: commissionRate,
+                    grossCommission: grossCommission,
+                    expenses: otherExpenses,
+                    saleType: t.representation.includes('Seller') ? 'listing' : 'buyer',
+                    brokerSplit: brokerSplit,
+                    brokerFee: brokerFee,
+                    notes: `Sale for ${t.clientName} at ${t.propertyAddress}.`
+                });
+            }
+        });
+
+        // 3. Prepare data and open dashboard
+        const dashboardState = {
+            logEntries: dashboardLogEntries,
+            goals: dashboardGoals,
+            categorizationRules: {} // You can define default rules here
+        };
+
+        // Save the transformed data to localStorage where the dashboard can find it
+        localStorage.setItem('realEstateDashboardState_v7', JSON.stringify(dashboardState));
+
+        // Open the dashboard in a new tab
+        window.open('https://kenmorgan.ca/UpdatedFullCompleteDashboardPerfected2025.html', '_blank');
+    };
+
+    // --- Link the new button to the function ---
+    document.getElementById('analyze-in-dashboard-btn').addEventListener('click', integrateWithDashboard);
+    loadData();
+    switchView('crm');
+});
+</script>
+</body>
+</html>

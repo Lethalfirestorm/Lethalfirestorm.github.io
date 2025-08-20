@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CEO Command Center V2.3</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .task-list input:checked + label { text-decoration: line-through; color: #6b7280; }
+        .section-title { border-bottom: 2px solid #374151; padding-bottom: 8px; margin-bottom: 16px; }
+        details > summary { cursor: pointer; list-style: none; }
+        details > summary::-webkit-details-marker { display: none; }
+        input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+        input[type="number"] { -moz-appearance: textfield; }
+        .progress-bar { background-color: #374151; }
+        .progress-bar-inner { background-color: #2563eb; transition: width 0.5s ease-in-out; }
+        #calendar .day { cursor: pointer; transition: all 0.2s; border: 2px solid transparent; }
+        #calendar .day:hover { background-color: #374151; }
+        #calendar .day.today { border-color: #60a5fa; }
+        #calendar .day.selected { background-color: #2563eb; color: white; }
+        #calendar .day.perfect { background-color: #16a34a; color: white; }
+        #calendar .day.good-effort { background-color: #ca8a04; color: white; }
+        #calendar .day.missed { background-color: #dc2626; color: white; }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-100 p-4 sm:p-6 md:p-8">
+
+    <div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8">
+        
+        <div class="lg:col-span-1 space-y-8">
+            <!-- YTD Performance -->
+            <section class="bg-gray-800 p-6 rounded-lg shadow-lg">
+                <h2 class="text-2xl font-bold text-white section-title">YTD Performance</h2>
+                <div class="space-y-4">
+                    <div class="text-center bg-gray-700 p-3 rounded-lg">
+                        <p class="text-sm text-gray-400">Habit Consistency</p>
+                        <p id="habit-consistency" class="text-3xl font-bold text-green-400">0%</p>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4 text-center">
+                        <div class="bg-gray-700 p-3 rounded-lg">
+                            <p class="text-sm text-gray-400">Perfect Days</p>
+                            <p id="perfect-days" class="text-2xl font-bold">0</p>
+                        </div>
+                        <div class="bg-gray-700 p-3 rounded-lg">
+                            <p class="text-sm text-gray-400">Weight Loss</p>
+                            <p id="total-weight-loss" class="text-2xl font-bold">0 lbs</p>
+                        </div>
+                    </div>
+                    <div>
+                        <p class="text-sm text-center text-gray-400 mb-1">Overall Plan Progress</p>
+                        <div class="w-full progress-bar rounded-full h-4"><div id="overall-progress" class="progress-bar-inner h-4 rounded-full flex items-center justify-center text-xs font-bold" style="width: 0%">0%</div></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Calendar -->
+            <section class="bg-gray-800 p-6 rounded-lg shadow-lg">
+                <div class="flex justify-between items-center mb-4">
+                    <button id="prev-month" class="p-2 rounded-md hover:bg-gray-700">&lt;</button>
+                    <h2 id="month-year" class="text-xl font-bold"></h2>
+                    <button id="next-month" class="p-2 rounded-md hover:bg-gray-700">&gt;</button>
+                </div>
+                <div id="calendar" class="grid grid-cols-7 gap-2 text-center">
+                    <div class="font-bold">S</div><div class="font-bold">M</div><div class="font-bold">T</div><div class="font-bold">W</div><div class="font-bold">T</div><div class="font-bold">F</div><div class="font-bold">S</div>
+                </div>
+            </section>
+
+            <!-- Data Management -->
+            <section class="bg-gray-800 p-6 rounded-lg shadow-lg">
+                <h2 class="text-2xl font-bold text-white section-title">Data Management</h2>
+                <div class="flex flex-wrap gap-4">
+                    <button id="export-json" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">Export JSON</button>
+                    <button id="export-csv" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">Export CSV</button>
+                    <label class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded cursor-pointer">
+                        Import JSON
+                        <input type="file" id="import-json" class="hidden" accept=".json">
+                    </label>
+                    <label class="bg-orange-600 hover:bg-orange-700 text-white font-bold py-2 px-4 rounded cursor-pointer">
+                        Import CSV
+                        <input type="file" id="import-csv" class="hidden" accept=".csv">
+                    </label>
+                     <button id="reset-data" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">Reset Data</button>
+                </div>
+            </section>
+        </div>
+
+        <div class="lg:col-span-2 space-y-8">
+            <!-- Daily CEO Scorecard -->
+            <section id="daily-scorecard" class="bg-gray-800 p-6 rounded-lg shadow-lg">
+                <div class="flex justify-between items-center flex-wrap gap-2">
+                    <h2 class="text-2xl font-bold text-white section-title">CEO Scorecard</h2>
+                    <p id="selected-date-display" class="text-lg text-blue-300 font-semibold"></p>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                    <div class="space-y-4 text-lg">
+                        <div class="flex items-center"><input type="checkbox" id="task-business" class="daily-task form-checkbox h-5 w-5"><label for="task-business" class="ml-3">#1 Business Priority</label></div>
+                        <div class="flex items-center"><input type="checkbox" id="task-workout" class="daily-task form-checkbox h-5 w-5"><label for="task-workout" class="ml-3">Weight Training</label></div>
+                        <div class="flex items-center"><input type="checkbox" id="task-walk" class="daily-task form-checkbox h-5 w-5"><label for="task-walk" class="ml-3">5km Walk</label></div>
+                        <div class="flex items-center"><input type="checkbox" id="task-nutrition" class="daily-task form-checkbox h-5 w-5"><label for="task-nutrition" class="ml-3">On-Plan Nutrition</label></div>
+                        <div class="flex items-center"><input type="checkbox" id="task-no-alcohol" class="daily-task form-checkbox h-5 w-5"><label for="task-no-alcohol" class="ml-3">No Alcohol</label></div>
+                    </div>
+                    <div class="bg-gray-700 p-4 rounded-lg">
+                        <h3 class="text-lg font-semibold text-center mb-3">Weight Progress</h3>
+                        <div class="flex justify-around items-center text-center">
+                            <div><p class="text-sm text-gray-400">Start</p><p class="text-2xl font-bold">198</p></div>
+                            <div><p class="text-sm text-gray-400">Goal</p><p class="text-2xl font-bold">178</p></div>
+                            <div><p class="text-sm text-green-400">To Go</p><p id="pounds-to-go" class="text-2xl font-bold text-green-400">20</p></div>
+                        </div>
+                        <div class="mt-2">
+                            <div class="w-full progress-bar rounded-full h-2.5"><div id="weight-progress" class="progress-bar-inner h-2.5 rounded-full"></div></div>
+                        </div>
+                        <div class="mt-3">
+                            <label for="current-weight" class="block text-sm font-medium text-center text-gray-300">Weight for <span id="weight-date">Today</span>:</label>
+                            <input type="number" id="current-weight" class="w-full bg-gray-800 text-white text-center text-xl p-1 border-gray-600 rounded-md mt-1" placeholder="Enter">
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <label for="daily-notes" class="block text-lg font-medium text-gray-300 mb-2">Notes for this day:</label>
+                    <textarea id="daily-notes" rows="3" class="w-full bg-gray-700 text-gray-200 border-gray-600 rounded-md p-2"></textarea>
+                </div>
+            </section>
+
+            <!-- Full Year Plan -->
+            <section class="bg-gray-800 p-6 rounded-lg shadow-lg">
+                <h2 class="text-2xl font-bold text-white section-title">The 12-Month Plan</h2>
+                
+                <details class="mb-4" open data-season="s1">
+                    <summary class="text-xl font-semibold text-blue-300 mb-3">Season 1: August Pre-Season</summary>
+                    <div class="w-full progress-bar rounded-full h-2.5 mb-2"><div id="s1-progress" class="progress-bar-inner h-2.5 rounded-full"></div></div>
+                    <ul class="task-list list-disc list-inside space-y-2 pl-4 border-l-2 border-gray-700 mt-2">
+                        <li><input type="checkbox" id="s1-t1" class="plan-task"><label for="s1-t1" class="ml-2">Commit to Lofty CRM plan.</label></li>
+                        <li><input type="checkbox" id="s1-t2" class="plan-task"><label for="s1-t2" class="ml-2">Watch 5 hours of Lofty training.</label></li>
+                        <li><input type="checkbox" id="s1-t3" class="plan-task"><label for="s1-t3" class="ml-2">Study BRA, Listing Agreement, APS.</label></li>
+                        <li><input type="checkbox" id="s1-t4" class="plan-task"><label for="s1-t4" class="ml-2">Create Social Media & Google Profiles.</label></li>
+                        <li><input type="checkbox" id="s1-t5" class="plan-task"><label for="s1-t5" class="ml-2">Film 2 videos; script 3 more.</label></li>
+                        <li><input type="checkbox" id="s1-t6" class="plan-task"><label for="s1-t6" class="ml-2">Schedule Open House Shadowing.</label></li>
+                    </ul>
+                </details>
+
+                <details class="mb-4" data-season="s2">
+                    <summary class="text-xl font-semibold text-green-300 mb-3">Season 2: Q4 Super-Sprint</summary>
+                     <div class="w-full progress-bar rounded-full h-2.5 mb-2"><div id="s2-progress" class="progress-bar-inner h-2.5 rounded-full"></div></div>
+                    <ul class="task-list list-disc list-inside space-y-2 pl-4 border-l-2 border-gray-700 mt-2">
+                        <li><input type="checkbox" id="s2-t1" class="plan-task"><label for="s2-t1" class="ml-2">Host 8+ Open Houses/month.</label></li>
+                        <li><input type="checkbox" id="s2-t2" class="plan-task"><label for="s2-t2" class="ml-2">Add 20+ contacts/week to Lofty.</label></li>
+                        <li><input type="checkbox" id="s2-t3" class="plan-task"><label for="s2-t3" class="ml-2">Publish 1 video/week.</label></li>
+                        <li><input type="checkbox" id="s2-t4" class="plan-task"><label for="s2-t4" class="ml-2">Secure 2 Buyer Rep Agreements.</label></li>
+                        <li><input type="checkbox" id="s2-t5" class="plan-task"><label for="s2-t5" class="ml-2">Secure 1 Listing Agreement.</label></li>
+                        <li><input type="checkbox" id="s2-t6" class="plan-task"><label for="s2-t6" class="ml-2">Close first transaction.</label></li>
+                        <li><input type="checkbox" id="s2-t7" class="plan-task"><label for="s2-t7" class="ml-2">Establish mentor referral partnership.</label></li>
+                    </ul>
+                </details>
+
+                <details class="mb-4" data-season="s3">
+                    <summary class="text-xl font-semibold text-yellow-300 mb-3">Season 3: Active Recharge</summary>
+                     <div class="w-full progress-bar rounded-full h-2.5 mb-2"><div id="s3-progress" class="progress-bar-inner h-2.5 rounded-full"></div></div>
+                    <ul class="task-list list-disc list-inside space-y-2 pl-4 border-l-2 border-gray-700 mt-2">
+                        <li><input type="checkbox" id="s3-t1" class="plan-task"><label for="s3-t1" class="ml-2">Execute 1 hour remote lead follow-up daily.</label></li>
+                        <li><input type="checkbox" id="s3-t2" class="plan-task"><label for="s3-t2" class="ml-2">Send weekly automated market updates.</label></li>
+                        <li><input type="checkbox" id="s3-t3" class="plan-task"><label for="s3-t3" class="ml-2">Script video content for Spring Market.</label></li>
+                        <li><input type="checkbox" id="s3-t4" class="plan-task"><label for="s3-t4" class="ml-2">Coordinate with mentor on active clients.</label></li>
+                    </ul>
+                </details>
+
+                <details data-season="s4">
+                    <summary class="text-xl font-semibold text-red-300 mb-3">Season 4: Spring Market Ramp-Up</summary>
+                     <div class="w-full progress-bar rounded-full h-2.5 mb-2"><div id="s4-progress" class="progress-bar-inner h-2.5 rounded-full"></div></div>
+                    <ul class="task-list list-disc list-inside space-y-2 pl-4 border-l-2 border-gray-700 mt-2">
+                        <li><input type="checkbox" id="s4-t1" class="plan-task"><label for="s4-t1" class="ml-2">Launch "First-Time Buyer" webinar.</label></li>
+                        <li><input type="checkbox" id="s4-t2" class="plan-task"><label for="s4-t2" class="ml-2">Increase video production to 2/week.</label></li>
+                        <li><input type="checkbox" id="s4-t3" class="plan-task"><label for="s4-t3" class="ml-2">Host client appreciation event.</label></li>
+                        <li><input type="checkbox" id="s4-t4" class="plan-task"><label for="s4-t4" class="ml-2">Ask for 5+ online reviews.</label></li>
+                        <li><input type="checkbox" id="s4-t5" class="plan-task"><label for="s4-t5" class="ml-2">Review mid-year P&L and adjust budget.</label></li>
+                    </ul>
+                </details>
+            </section>
+        </div>
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const storageKey = 'ceoDashboardData_v7'; // Updated key
+        const startWeight = 198;
+        const goalWeight = 178;
+        let mainData = {};
+        let currentDate = new Date();
+        let selectedDate = new Date();
+
+        const toYMD = (date) => date.toISOString().slice(0, 10);
+        const toDisplayDate = (date) => date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+
+        const dailyTaskIds = ['task-business', 'task-workout', 'task-walk', 'task-nutrition', 'task-no-alcohol'];
+
+        function calculateAndRenderStats() {
+            const planTasks = document.querySelectorAll('.plan-task');
+            const checkedPlanTasks = document.querySelectorAll('.plan-task:checked');
+            const overallProgress = planTasks.length > 0 ? (checkedPlanTasks.length / planTasks.length) * 100 : 0;
+            const overallProgressBar = document.getElementById('overall-progress');
+            overallProgressBar.style.width = `${overallProgress.toFixed(0)}%`;
+            overallProgressBar.textContent = `${overallProgress.toFixed(0)}%`;
+
+            let totalHabits = 0, totalCheckedHabits = 0, perfectDays = 0, latestWeight = startWeight;
+            const sortedDates = Object.keys(mainData).filter(key => key.match(/^\d{4}-\d{2}-\d{2}$/)).sort();
+
+            sortedDates.forEach(dateStr => {
+                const dayData = mainData[dateStr];
+                let checkedCount = 0;
+                let dayHasHabitData = false;
+                dailyTaskIds.forEach(id => {
+                    if (dayData[id] !== undefined) {
+                        dayHasHabitData = true;
+                        totalHabits++;
+                        if (dayData[id]) {
+                            checkedCount++;
+                            totalCheckedHabits++;
+                        }
+                    }
+                });
+                if (dayHasHabitData && checkedCount === dailyTaskIds.length) perfectDays++;
+                if (dayData['current-weight'] && dayData['current-weight'] !== '') latestWeight = parseFloat(dayData['current-weight']);
+            });
+
+            const habitConsistency = totalHabits > 0 ? (totalCheckedHabits / totalHabits) * 100 : 0;
+            const totalWeightLoss = startWeight - latestWeight;
+
+            document.getElementById('habit-consistency').textContent = `${habitConsistency.toFixed(0)}%`;
+            document.getElementById('perfect-days').textContent = perfectDays;
+            document.getElementById('total-weight-loss').textContent = `${totalWeightLoss.toFixed(1)} lbs`;
+        }
+
+        function renderCalendar() {
+            const calendarEl = document.getElementById('calendar');
+            calendarEl.innerHTML = '<div class="font-bold">S</div><div class="font-bold">M</div><div class="font-bold">T</div><div class="font-bold">W</div><div class="font-bold">T</div><div class="font-bold">F</div><div class="font-bold">S</div>';
+            const year = currentDate.getFullYear();
+            const month = currentDate.getMonth();
+            document.getElementById('month-year').textContent = `${currentDate.toLocaleString('default', { month: 'long' })} ${year}`;
+            
+            const firstDay = new Date(year, month, 1).getDay();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+            for (let i = 0; i < firstDay; i++) calendarEl.insertAdjacentHTML('beforeend', '<div></div>');
+
+            for (let i = 1; i <= daysInMonth; i++) {
+                const dayDate = new Date(year, month, i);
+                const dayStr = toYMD(dayDate);
+                const dayEl = document.createElement('div');
+                dayEl.textContent = i;
+                dayEl.className = 'day p-2 rounded-md';
+                dayEl.dataset.date = dayStr;
+
+                if (dayStr === toYMD(new Date())) dayEl.classList.add('today');
+                if (dayStr === toYMD(selectedDate)) dayEl.classList.add('selected');
+
+                const dayData = mainData[dayStr];
+                if (dayData) {
+                    const checkedCount = dailyTaskIds.filter(id => dayData[id]).length;
+                    if (checkedCount === dailyTaskIds.length) dayEl.classList.add('perfect');
+                    else if (checkedCount > 0) dayEl.classList.add('good-effort');
+                    else if (dailyTaskIds.some(id => dayData[id] === false)) dayEl.classList.add('missed');
+                }
+                calendarEl.appendChild(dayEl);
+            }
+        }
+        
+        function loadDataForDate(dateStr) {
+            selectedDate = new Date(dateStr.replace(/-/g, '/'));
+            document.getElementById('selected-date-display').textContent = toDisplayDate(selectedDate);
+            document.getElementById('weight-date').textContent = toYMD(selectedDate) === toYMD(new Date()) ? "Today" : toDisplayDate(selectedDate);
+
+            const dataForDay = mainData[dateStr] || {};
+            const planData = mainData['planTasks'] || {};
+            
+            document.querySelectorAll('.daily-task').forEach(i => i.checked = dataForDay[i.id] || false);
+            document.querySelectorAll('.plan-task').forEach(i => i.checked = planData[i.id] || false);
+            
+            document.getElementById('daily-notes').value = dataForDay['daily-notes'] || '';
+            document.getElementById('current-weight').value = dataForDay['current-weight'] || '';
+            
+            updateWeightMetrics();
+            updateAllProgressBars();
+            calculateAndRenderStats();
+            renderCalendar();
+        }
+
+        function saveData() {
+            const dateStr = toYMD(selectedDate);
+            if (!mainData[dateStr]) mainData[dateStr] = {};
+            if (!mainData['planTasks']) mainData['planTasks'] = {};
+            
+            document.querySelectorAll('.daily-task').forEach(i => mainData[dateStr][i.id] = i.checked);
+            mainData[dateStr]['daily-notes'] = document.getElementById('daily-notes').value;
+            mainData[dateStr]['current-weight'] = document.getElementById('current-weight').value;
+            document.querySelectorAll('.plan-task').forEach(i => mainData['planTasks'][i.id] = i.checked);
+
+            localStorage.setItem(storageKey, JSON.stringify(mainData));
+            
+            updateWeightMetrics();
+            updateAllProgressBars();
+            calculateAndRenderStats();
+            renderCalendar();
+        }
+
+        function updateWeightMetrics() {
+            const currentWeightInput = document.getElementById('current-weight');
+            const poundsToGoEl = document.getElementById('pounds-to-go');
+            const weightProgressBar = document.getElementById('weight-progress');
+            const currentWeight = parseFloat(currentWeightInput.value);
+
+            if (currentWeight) {
+                const totalLossGoal = startWeight - goalWeight;
+                const lossSoFar = startWeight - currentWeight;
+                const progress = totalLossGoal > 0 ? (lossSoFar / totalLossGoal) * 100 : 0;
+                weightProgressBar.style.width = `${Math.max(0, Math.min(100, progress))}%`;
+                
+                const toGo = (currentWeight - goalWeight).toFixed(1);
+                poundsToGoEl.textContent = toGo > 0 ? toGo : 'Met!';
+            } else {
+                poundsToGoEl.textContent = (startWeight - goalWeight).toFixed(1);
+                weightProgressBar.style.width = '0%';
+            }
+        }
+
+        function updateAllProgressBars() {
+            ['s1', 's2', 's3', 's4'].forEach(seasonId => {
+                const container = document.querySelector(`details[data-season="${seasonId}"]`);
+                if (!container) return;
+                const tasks = container.querySelectorAll('.plan-task');
+                const completedTasks = container.querySelectorAll('.plan-task:checked');
+                const progress = tasks.length > 0 ? (completedTasks.length / tasks.length) * 100 : 0;
+                const progressBar = document.getElementById(`${seasonId}-progress`);
+                if(progressBar) progressBar.style.width = `${progress}%`;
+            });
+        }
+        
+        // --- CSV Functions ---
+        function exportToCsv() {
+            const data = mainData;
+            if (Object.keys(data).length === 0) { alert('No data to export!'); return; }
+            let csvContent = 'key,value\n';
+            // Flatten the data into a key-value pair format for CSV
+            Object.keys(data).forEach(key => {
+                const value = JSON.stringify(data[key]);
+                csvContent += `"${key}","${value.replace(/"/g, '""')}"\n`;
+            });
+
+            const encodedUri = encodeURI('data:text/csv;charset=utf-8,' + csvContent);
+            const link = document.createElement('a');
+            link.setAttribute('href', encodedUri);
+            link.setAttribute('download', `ceo_dashboard_v2.3_backup_${new Date().toISOString().slice(0,10)}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        function importFromCsv(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const text = e.target.result;
+                    const lines = text.split('\n').filter(l => l.trim() !== '');
+                    if (lines.length < 2 || !lines[0].trim().toLowerCase().startsWith('key,value')) {
+                        throw new Error('Invalid CSV format. Header must be "key,value".');
+                    }
+                    const importedData = {};
+                    for (let i = 1; i < lines.length; i++) {
+                        const match = lines[i].match(/^"(.*?)","(.*)"$/);
+                        if (match && match.length === 3) {
+                            const key = match[1];
+                            const value = JSON.parse(match[2].replace(/""/g, '"'));
+                            importedData[key] = value;
+                        }
+                    }
+                    if (Object.keys(importedData).length > 0) {
+                        mainData = importedData;
+                        localStorage.setItem(storageKey, JSON.stringify(mainData));
+                        loadDataForDate(toYMD(selectedDate));
+                        alert('Data imported successfully from CSV!');
+                    } else {
+                        throw new Error('No valid data found in CSV file.');
+                    }
+                } catch (error) {
+                    alert('Error importing CSV: ' + error.message);
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // --- Event Listeners ---
+        document.getElementById('prev-month').addEventListener('click', () => { currentDate.setMonth(currentDate.getMonth() - 1); renderCalendar(); });
+        document.getElementById('next-month').addEventListener('click', () => { currentDate.setMonth(currentDate.getMonth() + 1); renderCalendar(); });
+        document.getElementById('calendar').addEventListener('click', (e) => { if (e.target.dataset.date) loadDataForDate(e.target.dataset.date); });
+        document.querySelectorAll('input, textarea').forEach(el => el.addEventListener('input', saveData));
+
+        document.getElementById('export-json').addEventListener('click', () => {
+            const dataStr = localStorage.getItem(storageKey);
+            if(!dataStr) { alert('No data to export!'); return; }
+            const dataBlob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(dataBlob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `ceo_dashboard_v2.3_backup_${new Date().toISOString().slice(0,10)}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+        });
+
+        document.getElementById('import-json').addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    try {
+                        mainData = JSON.parse(e.target.result);
+                        localStorage.setItem(storageKey, JSON.stringify(mainData));
+                        loadDataForDate(toYMD(selectedDate));
+                        alert('Data imported successfully!');
+                    } catch (error) {
+                        alert('Error importing file.');
+                    }
+                };
+                reader.readAsText(file);
+            }
+        });
+        
+        document.getElementById('export-csv').addEventListener('click', exportToCsv);
+        document.getElementById('import-csv').addEventListener('change', importFromCsv);
+
+        document.getElementById('reset-data').addEventListener('click', () => {
+            if (confirm('Are you sure you want to reset ALL data? This cannot be undone.')) {
+                localStorage.removeItem(storageKey);
+                mainData = {};
+                document.querySelectorAll('input, textarea').forEach(el => el.type === 'checkbox' ? el.checked = false : el.value = '');
+                loadDataForDate(toYMD(selectedDate));
+                alert('All data has been reset.');
+            }
+        });
+
+        mainData = JSON.parse(localStorage.getItem(storageKey)) || {};
+        loadDataForDate(toYMD(selectedDate));
+    });
+    </script>
+</body>
+</html>

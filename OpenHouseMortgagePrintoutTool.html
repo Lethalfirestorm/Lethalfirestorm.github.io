@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ken Morgan's Home Financing Calculator</title>
+    
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Chart.js for data visualization -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- jsPDF for PDF Generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    
+    <!-- Google Fonts: Inter and Playfair Display for the PDF -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap" rel="stylesheet">
+    
+    <style>
+        /* Custom styles to enhance the look and feel */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8; /* Light blue-gray background */
+        }
+        .card {
+            background-color: white;
+            border-radius: 1rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease-in-out;
+        }
+        .input-label {
+            font-weight: 500;
+            color: #4a5568; /* Gray-700 */
+        }
+        .input-field {
+            width: 100%;
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            border: 1px solid #cbd5e0; /* Gray-300 */
+            transition: border-color 0.2s;
+        }
+        .input-field:focus {
+            outline: none;
+            border-color: #4299e1; /* Blue-400 */
+            box-shadow: 0 0 0 2px rgba(66, 153, 225, 0.5);
+        }
+        .slider {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 8px;
+            border-radius: 5px;
+            background: #d2d6dc;
+            outline: none;
+            opacity: 0.7;
+            transition: opacity .2s;
+        }
+        .slider:hover {
+            opacity: 1;
+        }
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #3182ce; /* Blue-600 */
+            cursor: pointer;
+        }
+        .slider::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #3182ce; /* Blue-600 */
+            cursor: pointer;
+        }
+        .info-icon {
+            cursor: pointer;
+            color: #718096; /* Gray-500 */
+        }
+        .tooltip {
+            visibility: hidden;
+            width: 220px;
+            background-color: #2d3748; /* Gray-800 */
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 8px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            margin-left: -110px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .info-icon:hover .tooltip {
+            visibility: visible;
+            opacity: 1;
+        }
+        .summary-value {
+            font-size: 2.25rem;
+            font-weight: 700;
+            color: #2c5282; /* Blue-800 */
+        }
+        .summary-label {
+            font-weight: 500;
+            color: #718096; /* Gray-500 */
+        }
+        .btn-primary {
+            background-color: #3182ce;
+            color: white;
+            font-weight: bold;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            transition: background-color 0.3s;
+        }
+        .btn-primary:hover {
+            background-color: #2b6cb0;
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+
+    <div class="max-w-7xl mx-auto">
+        <!-- Header -->
+        <header class="text-center mb-8">
+            <h1 class="text-4xl md:text-5xl font-bold text-gray-800 mt-8">Ken Morgan's Home Financing Calculator</h1>
+            <p class="text-lg text-gray-600 mt-2">Your interactive tool to estimate mortgage payments and affordability.</p>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-5 gap-8">
+            <!-- Left Column: Inputs -->
+            <div class="lg:col-span-2 space-y-6">
+                <div class="card p-6">
+                    <h2 class="text-2xl font-bold text-gray-700 mb-4">Property & Loan Details</h2>
+
+                    <div class="space-y-2 mb-4">
+                        <label for="propertyAddress" class="input-label">Property Address</label>
+                        <input type="text" id="propertyAddress" class="input-field" placeholder="e.g., 123 Main St, Hamilton, ON">
+                    </div>
+
+                    <div class="space-y-2 mb-4">
+                        <label for="purchasePrice" class="input-label">Purchase Price</label>
+                        <input type="number" id="purchasePrice" class="input-field" value="750000" step="5000">
+                        <input type="range" id="purchasePriceSlider" class="slider" min="100000" max="2500000" step="5000" value="750000">
+                    </div>
+
+                    <div class="space-y-2 mb-4">
+                        <div class="flex justify-between items-center">
+                            <label for="downPayment" class="input-label">Down Payment (%)</label>
+                            <span id="downPaymentValue" class="font-semibold text-gray-700"></span>
+                        </div>
+                        <input type="range" id="downPayment" class="slider" min="5" max="50" step="0.5" value="20">
+                        <p id="minDownPaymentText" class="text-sm text-gray-500"></p>
+                    </div>
+
+                    <div class="space-y-2 mb-4">
+                        <label for="interestRate" class="input-label">Interest Rate (%)</label>
+                        <input type="number" id="interestRate" class="input-field" value="5.25" step="0.01">
+                    </div>
+
+                    <div class="space-y-2">
+                        <label for="amortization" class="input-label">Amortization Period</label>
+                        <select id="amortization" class="input-field">
+                            <option value="25">25 Years</option>
+                            <option value="30">30 Years</option>
+                            <option value="20">20 Years</option>
+                            <option value="15">15 Years</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="card p-6">
+                    <h2 class="text-2xl font-bold text-gray-700 mb-4">Additional Costs & Report</h2>
+                    <div class="space-y-2 mb-4">
+                        <label for="propertyTaxes" class="input-label">Annual Property Taxes</label>
+                        <input type="number" id="propertyTaxes" class="input-field" value="3600" step="100">
+                    </div>
+                    <div class="space-y-2 mb-4">
+                        <label for="monthlyUtilities" class="input-label">Estimated Monthly Utilities</label>
+                        <input type="number" id="monthlyUtilities" class="input-field" value="150" step="10">
+                    </div>
+                    <div class="space-y-2 mb-4">
+                        <label for="condoFees" class="input-label">Monthly Condo/Maintenance Fees</label>
+                        <input type="number" id="condoFees" class="input-field" value="0" step="10">
+                    </div>
+                     <div class="mt-6 text-center">
+                        <button id="generateReportBtn" class="btn-primary w-full">Generate Printable Report</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: Results -->
+            <div class="lg:col-span-3 space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="card p-6 text-center">
+                        <h3 class="summary-label">Total Monthly Payment</h3>
+                        <p id="totalMonthlyPayment" class="summary-value">$0</p>
+                    </div>
+                    <div class="card p-6 text-center">
+                        <h3 class="summary-label">Required Annual Income</h3>
+                        <p id="requiredIncome" class="summary-value">$0</p>
+                    </div>
+                </div>
+
+                <div class="card p-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+                        <div class="space-y-4">
+                            <h3 class="text-2xl font-bold text-gray-700 mb-4">Financial Breakdown</h3>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Down Payment:</span>
+                                <span id="downPaymentAmount" class="font-semibold text-gray-800">$0</span>
+                            </div>
+                             <div class="flex justify-between">
+                                <span class="text-gray-600">Initial Mortgage:</span>
+                                <span id="initialMortgage" class="font-semibold text-gray-800">$0</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <div class="flex items-center space-x-2">
+                                    <span class="text-gray-600">CMHC Insurance:</span>
+                                    <div class="relative info-icon">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" /></svg>
+                                        <span class="tooltip">Mandatory on down payments < 20%. The premium is added to your mortgage.</span>
+                                    </div>
+                                </div>
+                                <span id="cmhcPremium" class="font-semibold text-gray-800">$0</span>
+                            </div>
+                            <div class="flex justify-between border-t-2 border-dashed pt-2">
+                                <span class="font-bold text-gray-700">Total Financed Amount:</span>
+                                <span id="totalFinanced" class="font-bold text-lg text-blue-700">$0</span>
+                            </div>
+                             <hr class="my-4">
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Principal & Interest:</span>
+                                <span id="piPayment" class="font-semibold text-gray-800">$0</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Monthly Property Tax:</span>
+                                <span id="monthlyTaxes" class="font-semibold text-gray-800">$0</span>
+                            </div>
+                             <div class="flex justify-between">
+                                <span class="text-gray-600">Monthly Condo Fees:</span>
+                                <span id="monthlyCondo" class="font-semibold text-gray-800">$0</span>
+                            </div>
+                        </div>
+                        <div>
+                            <canvas id="paymentChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card p-6">
+                    <h3 class="text-2xl font-bold text-gray-700 mb-4">Ontario Land Transfer Tax (LTT)</h3>
+                    <div class="flex items-center space-x-4 mb-4">
+                        <label for="firstTimeBuyer" class="input-label">First-Time Home Buyer?</label>
+                        <input type="checkbox" id="firstTimeBuyer" class="h-5 w-5 rounded text-blue-600 focus:ring-blue-500">
+                    </div>
+                    <div class="flex justify-between items-center bg-blue-50 p-4 rounded-lg">
+                        <span class="font-semibold text-blue-800">Estimated LTT Payable:</span>
+                        <span id="lttAmount" class="text-xl font-bold text-blue-900">$0</span>
+                    </div>
+                    <p class="text-sm text-gray-500 mt-2">Includes Provincial Land Transfer Tax. A first-time buyer may be eligible for a rebate of up to $4,000.</p>
+                </div>
+            </div>
+        </div>
+
+        <footer class="text-center mt-12 py-6 border-t border-gray-300">
+            <p class="text-gray-600">This calculator was prepared for you by</p>
+            <p class="text-xl font-semibold text-gray-800 mt-1">Ken Morgan, Realtor</p>
+        </footer>
+    </div>
+
+    <script>
+        // --- DOM Elements ---
+        const elements = {
+            propertyAddress: document.getElementById('propertyAddress'),
+            purchasePrice: document.getElementById('purchasePrice'),
+            purchasePriceSlider: document.getElementById('purchasePriceSlider'),
+            downPayment: document.getElementById('downPayment'),
+            downPaymentValue: document.getElementById('downPaymentValue'),
+            minDownPaymentText: document.getElementById('minDownPaymentText'),
+            interestRate: document.getElementById('interestRate'),
+            amortization: document.getElementById('amortization'),
+            propertyTaxes: document.getElementById('propertyTaxes'),
+            monthlyUtilities: document.getElementById('monthlyUtilities'),
+            condoFees: document.getElementById('condoFees'),
+            firstTimeBuyer: document.getElementById('firstTimeBuyer'),
+            generateReportBtn: document.getElementById('generateReportBtn'),
+            totalMonthlyPayment: document.getElementById('totalMonthlyPayment'),
+            requiredIncome: document.getElementById('requiredIncome'),
+            downPaymentAmount: document.getElementById('downPaymentAmount'),
+            initialMortgage: document.getElementById('initialMortgage'),
+            cmhcPremium: document.getElementById('cmhcPremium'),
+            totalFinanced: document.getElementById('totalFinanced'),
+            piPayment: document.getElementById('piPayment'),
+            monthlyTaxes: document.getElementById('monthlyTaxes'),
+            monthlyCondo: document.getElementById('monthlyCondo'),
+            lttAmount: document.getElementById('lttAmount'),
+        };
+
+        // --- Chart Initialization ---
+        const ctx = document.getElementById('paymentChart').getContext('2d');
+        let paymentChart = new Chart(ctx, {
+            type: 'doughnut',
+            data: { labels: ['Principal & Interest', 'Property Tax', 'Condo Fees'], datasets: [{ data: [1, 1, 1], backgroundColor: ['#3182ce', '#63b3ed', '#90cdf4'], borderColor: '#ffffff', borderWidth: 2 }] },
+            options: { responsive: true, plugins: { legend: { position: 'bottom' }, title: { display: true, text: 'Monthly Payment Breakdown', font: { size: 16 } } } }
+        });
+
+        // --- Calculation Logic ---
+        const formatCurrency = (num, includeDecimals = true) => {
+            if (typeof num !== 'number' || !isFinite(num)) {
+                return '$ -';
+            }
+            const options = { 
+                style: 'currency', 
+                currency: 'CAD',
+                minimumFractionDigits: includeDecimals ? 2 : 0,
+                maximumFractionDigits: includeDecimals ? 2 : 0,
+            };
+            return new Intl.NumberFormat('en-CA', options).format(num);
+        }
+        
+        function getMinDownPayment(price) {
+            if (price <= 500000) return price * 0.05;
+            if (price < 1500000) return (500000 * 0.05) + ((price - 500000) * 0.10);
+            return price * 0.20;
+        }
+
+        function calculateCMHC(loanAmount, downPaymentPercent) {
+            if (downPaymentPercent >= 20) return 0;
+            const ltv = 100 - downPaymentPercent;
+            if (ltv > 95) return Infinity;
+            if (ltv > 90.01) return loanAmount * 0.0400;
+            if (ltv > 85.01) return loanAmount * 0.0310;
+            if (ltv > 80.01) return loanAmount * 0.0280;
+            return 0;
+        }
+        
+        function calculateMonthlyPI(principal, annualRate, years) {
+            if (principal <= 0) return 0;
+            const monthlyRate = (annualRate / 100) / 12;
+            const numberOfPayments = years * 12;
+            if (monthlyRate === 0) return principal / numberOfPayments;
+            return principal * (monthlyRate * Math.pow(1 + monthlyRate, numberOfPayments)) / (Math.pow(1 + monthlyRate, numberOfPayments) - 1);
+        }
+
+        function calculateLTT(price, isFirstTime) {
+            let tax = 0;
+            if (price > 400000) tax += (price - 400000) * 0.02;
+            if (price > 250000) tax += (Math.min(price, 400000) - 250000) * 0.015;
+            if (price > 55000) tax += (Math.min(price, 250000) - 55000) * 0.01;
+            tax += Math.min(price, 55000) * 0.005;
+            if (isFirstTime) tax = Math.max(0, tax - 4000);
+            return tax;
+        }
+
+        function calculateAll() {
+            const price = parseFloat(elements.purchasePrice.value) || 0;
+            let downPaymentPercent = parseFloat(elements.downPayment.value) || 0;
+            const annualRate = parseFloat(elements.interestRate.value) || 0;
+            const amortizationYears = parseInt(elements.amortization.value, 10);
+            const annualTaxes = parseFloat(elements.propertyTaxes.value) || 0;
+            const monthlyCondo = parseFloat(elements.condoFees.value) || 0;
+            const monthlyUtilities = parseFloat(elements.monthlyUtilities.value) || 0;
+            const isFirstTime = elements.firstTimeBuyer.checked;
+
+            const minDownPaymentAmount = getMinDownPayment(price);
+            const minDownPaymentPercent = (minDownPaymentAmount / price) * 100;
+            
+            elements.downPayment.min = minDownPaymentPercent.toFixed(1);
+            if (downPaymentPercent < minDownPaymentPercent) {
+                downPaymentPercent = minDownPaymentPercent;
+                elements.downPayment.value = minDownPaymentPercent.toFixed(1);
+            }
+            elements.minDownPaymentText.textContent = `Minimum down payment for this price is ${formatCurrency(minDownPaymentAmount)} (${minDownPaymentPercent.toFixed(2)}%).`;
+
+            const downPaymentAmount = price * (downPaymentPercent / 100);
+            const initialMortgage = price - downPaymentAmount;
+            const cmhcPremium = calculateCMHC(initialMortgage, downPaymentPercent);
+            const totalFinanced = initialMortgage + cmhcPremium;
+            const piPayment = calculateMonthlyPI(totalFinanced, annualRate, amortizationYears);
+            const monthlyTaxes = annualTaxes / 12;
+            const totalMonthlyPayment = piPayment + monthlyTaxes + monthlyCondo + monthlyUtilities;
+            const stressTestRate = Math.max(5.25, annualRate + 2);
+            const stressTestPI = calculateMonthlyPI(totalFinanced, stressTestRate, amortizationYears);
+            const gdsCosts = stressTestPI + monthlyTaxes + monthlyUtilities + (monthlyCondo * 0.5);
+            const requiredIncome = (gdsCosts * 12) / 0.39;
+            const ltt = calculateLTT(price, isFirstTime);
+
+            elements.downPaymentValue.textContent = `${downPaymentPercent.toFixed(1)}%`;
+            elements.downPaymentAmount.textContent = formatCurrency(downPaymentAmount);
+            elements.initialMortgage.textContent = formatCurrency(initialMortgage);
+            elements.cmhcPremium.textContent = formatCurrency(cmhcPremium);
+            elements.totalFinanced.textContent = formatCurrency(totalFinanced);
+            elements.piPayment.textContent = `${formatCurrency(piPayment)}/mo`;
+            elements.monthlyTaxes.textContent = `${formatCurrency(monthlyTaxes)}/mo`;
+            elements.monthlyCondo.textContent = `${formatCurrency(monthlyCondo)}/mo`;
+            elements.totalMonthlyPayment.textContent = formatCurrency(totalMonthlyPayment);
+            elements.requiredIncome.textContent = formatCurrency(requiredIncome);
+            elements.lttAmount.textContent = formatCurrency(ltt);
+
+            paymentChart.data.datasets[0].data = [piPayment, monthlyTaxes, monthlyCondo, monthlyUtilities];
+            paymentChart.data.labels = ['Principal & Interest', 'Property Tax', 'Condo Fees', 'Utilities'];
+            paymentChart.update();
+        }
+
+        // --- PDF Report Generation ---
+        function generateReport() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF('p', 'mm', 'letter');
+
+            const price = parseFloat(elements.purchasePrice.value) || 0;
+            const address = elements.propertyAddress.value || 'N/A';
+            const annualRate = parseFloat(elements.interestRate.value) || 0;
+            const amortizationYears = parseInt(elements.amortization.value, 10);
+            const annualTaxes = parseFloat(elements.propertyTaxes.value) || 0;
+            const monthlyCondo = parseFloat(elements.condoFees.value) || 0;
+            const monthlyUtilities = parseFloat(elements.monthlyUtilities.value) || 0;
+            const isFirstTime = elements.firstTimeBuyer.checked;
+
+            // --- Define Scenarios ---
+            const minDownPercent = (getMinDownPayment(price) / price) * 100;
+            const baseScenarioPercentages = [5, 10, 20, 50];
+            const applicableScenarios = baseScenarioPercentages
+                .filter(p => p >= minDownPercent)
+                .map(dpPercent => {
+                    const dpAmount = price * (dpPercent / 100);
+                    const mortgage = price - dpAmount;
+                    const cmhc = calculateCMHC(mortgage, dpPercent);
+                    const totalFinanced = mortgage + cmhc;
+                    const piPayment = calculateMonthlyPI(totalFinanced, annualRate, amortizationYears);
+                    const totalMonthly = piPayment + (annualTaxes / 12) + monthlyCondo + monthlyUtilities;
+                    const stressTestRate = Math.max(5.25, annualRate + 2);
+                    const stressTestPI = calculateMonthlyPI(totalFinanced, stressTestRate, amortizationYears);
+                    const gdsCosts = stressTestPI + (annualTaxes / 12) + monthlyUtilities + (monthlyCondo * 0.5);
+                    const requiredIncome = (gdsCosts * 12) / 0.39;
+
+                    return {
+                        "Scenario Title": dpPercent < 20 ? "High Ratio" : "Conventional",
+                        "Down Payment %": `${dpPercent}%`,
+                        "Down Payment Amount": formatCurrency(dpAmount), "First Mortgage": formatCurrency(mortgage), "CMHC Premium": formatCurrency(cmhc), "Total Financing": formatCurrency(totalFinanced),
+                        "Principal & Interest": formatCurrency(piPayment), "Monthly Property Tax": formatCurrency(annualTaxes / 12), "Monthly Utilities": formatCurrency(monthlyUtilities), "Total Monthly Payment": formatCurrency(totalMonthly), "Required Gross Income": formatCurrency(requiredIncome)
+                    };
+                });
+
+            // --- Drawing PDF ---
+            const pageW = doc.internal.pageSize.getWidth();
+            const pageH = doc.internal.pageSize.getHeight();
+            const leftMargin = 15;
+            let y = 20;
+
+            doc.setFont('Times', 'italic');
+            doc.setFontSize(24).setTextColor(41, 128, 185);
+            doc.text(address, pageW / 2, y, { align: 'center' });
+            y += 12;
+            
+            doc.setFont('Helvetica', 'bold').setFontSize(18).setTextColor(100);
+            doc.text(`Purchase Price: ${formatCurrency(price)}`, pageW / 2, y, { align: 'center' });
+            y += 8;
+            doc.setFont('Helvetica', 'normal').setFontSize(10).setTextColor(120,120,120);
+            doc.text(`Based on a ${annualRate.toFixed(2)}% interest rate and a ${amortizationYears}-year amortization.`, pageW / 2, y, { align: 'center' });
+            y += 8;
+
+
+            const labelColWidth = 55;
+            const valueColWidth = (pageW - leftMargin * 2 - labelColWidth) / applicableScenarios.length;
+            const colStarts = applicableScenarios.map((_, i) => leftMargin + labelColWidth + (i * valueColWidth));
+            
+            const rowLabels = Object.keys(applicableScenarios[0]);
+            rowLabels.forEach((label, i) => {
+                if (label === "Scenario Title") {
+                    doc.setFillColor(44, 62, 80);
+                    doc.rect(leftMargin, y - 5, pageW - (leftMargin * 2), 10, 'F');
+                }
+                
+                doc.setFontSize(9);
+                doc.setTextColor(52, 73, 94);
+
+                if (label === "Total Monthly Payment" || label === "Required Gross Income") doc.setFont('Helvetica', 'bold');
+                else doc.setFont('Helvetica', 'normal');
+
+                if (label !== "Scenario Title") {
+                    doc.text(label, leftMargin + 1, y);
+                }
+
+                applicableScenarios.forEach((scenario, j) => {
+                    if (label === "Scenario Title") {
+                        doc.setFont('Helvetica', 'bold').setTextColor(255, 255, 255);
+                    } else {
+                        doc.setFont('Helvetica', 'normal').setTextColor(52, 73, 94);
+                    }
+                    doc.text(scenario[label], colStarts[j] + valueColWidth / 2, y, { align: 'center' });
+                });
+                y += (i === 0) ? 12 : 8;
+            });
+            const endOfTableY = y;
+
+            // --- Charts Section ---
+            const chartSectionHeight = 60; 
+            const footerStartY = pageH - 60;
+            const availableSpace = footerStartY - endOfTableY;
+            let chartSectionTop = endOfTableY + (availableSpace - chartSectionHeight) / 2;
+            
+            doc.setDrawColor(220, 220, 220).line(leftMargin, chartSectionTop, pageW - leftMargin, chartSectionTop);
+            chartSectionTop += 8;
+            
+            doc.setFont('Helvetica', 'bold').setFontSize(12).setTextColor(0,0,0);
+            doc.text("Visual Comparison", pageW/2, chartSectionTop, {align: 'center'});
+
+            const chartH = 40;
+            const chartsY = chartSectionTop + chartSectionHeight - chartH - 5; // Align charts to bottom of section
+            
+            const chartW = (pageW - leftMargin * 2 - 15) / 2;
+            const reportScenarios = applicableScenarios;
+
+            // Chart 1: Monthly Payment
+            const paymentValues = reportScenarios.map(s => parseFloat(s["Total Monthly Payment"].replace(/[^0-9.-]+/g,"")));
+            const maxPayment = Math.ceil(Math.max(...paymentValues) / 500) * 500;
+            doc.setFont('Helvetica', 'normal').setFontSize(7).setTextColor(120, 120, 120);
+            doc.text(formatCurrency(maxPayment, false), leftMargin - 2, chartsY + 3, { align: 'right' });
+            doc.text(formatCurrency(0, false), leftMargin - 2, chartsY + chartH, { align: 'right' });
+            reportScenarios.forEach((scenario, i) => {
+                const barHeight = maxPayment > 0 ? (paymentValues[i] / maxPayment) * chartH : 0;
+                const barX = leftMargin + (chartW / reportScenarios.length) * i + (chartW / reportScenarios.length - 15) / 2;
+                const barColors = ['#2980B9', '#3498DB', '#5DADE2', '#85C1E9'];
+                doc.setFillColor(barColors[i % barColors.length]);
+                doc.rect(barX, chartsY + chartH - barHeight, 15, barHeight, 'F');
+                doc.setFont('Helvetica', 'bold').setFontSize(8).setTextColor(44, 62, 80).text(formatCurrency(paymentValues[i], false), barX + 7.5, chartsY + chartH - barHeight - 2, {align: 'center'});
+                doc.setFont('Helvetica', 'normal').setFontSize(7).setTextColor(0,0,0).text(scenario["Down Payment %"], barX + 7.5, chartsY + chartH + 4, {align: 'center'});
+            });
+
+            // Chart 2: Total Mortgage
+            const mortgageChartX = leftMargin + chartW + 15;
+            const mortgageValues = reportScenarios.map(s => parseFloat(s["Total Financing"].replace(/[^0-9.-]+/g,"")));
+            const maxMortgage = Math.ceil(Math.max(...mortgageValues) / 100000) * 100000;
+            doc.setFont('Helvetica', 'normal').setFontSize(7).setTextColor(120, 120, 120);
+            doc.text(formatCurrency(maxMortgage, false), mortgageChartX - 2, chartsY + 3, { align: 'right' });
+            doc.text(formatCurrency(0, false), mortgageChartX - 2, chartsY + chartH, { align: 'right' });
+            reportScenarios.forEach((scenario, i) => {
+                const barHeight = maxMortgage > 0 ? (mortgageValues[i] / maxMortgage) * chartH : 0;
+                const barX = mortgageChartX + (chartW / reportScenarios.length) * i + (chartW / reportScenarios.length - 15) / 2;
+                const barColors = ['#2980B9', '#3498DB', '#5DADE2', '#85C1E9'];
+                doc.setFillColor(barColors[i % barColors.length]);
+                doc.rect(barX, chartsY + chartH - barHeight, 15, barHeight, 'F');
+                doc.setFont('Helvetica', 'bold').setFontSize(8).setTextColor(44, 62, 80).text(formatCurrency(mortgageValues[i], false), barX + 7.5, chartsY + chartH - barHeight - 2, {align: 'center'});
+                doc.setFont('Helvetica', 'normal').setFontSize(7).setTextColor(0,0,0).text(scenario["Down Payment %"], barX + 7.5, chartsY + chartH + 4, {align: 'center'});
+            });
+
+            // --- Footer Section ---
+            doc.setDrawColor(220, 220, 220).line(leftMargin, footerStartY, pageW - leftMargin, footerStartY);
+            
+            // Key Considerations
+            const considerationsY = footerStartY + 8;
+            doc.setFont('Helvetica', 'bold').setFontSize(11).setTextColor(0,0,0);
+            doc.text("Key Considerations", leftMargin, considerationsY);
+            
+            const minDownPaymentAmount = getMinDownPayment(price);
+            const considerationsText = [
+                `Minimum Down Payment: For this property, a minimum down payment of ${minDownPercent.toFixed(2)}% (${formatCurrency(minDownPaymentAmount)}) is required.`,
+                "Mortgage Default Insurance (e.g. CMHC): If your down payment is less than 20%, you must get mortgage default insurance. The premium is typically added to your mortgage amount.",
+                "Benefit of 20% Down: Putting down 20% or more avoids the cost of mortgage default insurance, potentially saving you thousands and leading to better mortgage rates.",
+                "Amortization Period: As of Dec 15, 2024, first-time homebuyers purchasing new construction may qualify for a 30-year amortization period, even with less than 20% down."
+            ].join(" ");
+            doc.setFont('Helvetica', 'normal').setFontSize(8);
+            const considerationsLines = doc.splitTextToSize(considerationsText, pageW - (leftMargin * 2) - 65);
+            doc.text(considerationsLines, leftMargin, considerationsY + 5, { lineHeightFactor: 1.5 });
+            const considerationsHeight = (doc.getTextDimensions(considerationsLines).h) + 4;
+
+            // Contact Info & Call to Action
+            const contactBlockHeight = considerationsHeight > 32 ? considerationsHeight : 32;
+            const contactBlockY = footerStartY + 5;
+            const contactX = pageW - leftMargin - 60;
+            doc.setFillColor(245, 248, 252);
+            doc.setDrawColor(220, 220, 220);
+            doc.rect(contactX, contactBlockY, 60, contactBlockHeight, 'FD');
+            doc.setFont('Helvetica', 'bold').setFontSize(12).setTextColor(44, 62, 80);
+            doc.text("Ready for the next step?", contactX + 30, contactBlockY + 8, {align: 'center'});
+            doc.setFont('Helvetica', 'bold').setFontSize(14).setTextColor(41, 128, 185);
+            doc.text("KEN MORGAN", contactX + 30, contactBlockY + 16, {align: 'center'});
+            doc.setFont('Helvetica', 'normal').setFontSize(9).setTextColor(52, 73, 94);
+            doc.text("Call or Text: 905.630.1225", contactX + 30, contactBlockY + 22, {align: 'center'});
+            doc.text("sales@kenmorgan.ca | kenmorgan.ca", contactX + 30, contactBlockY + 27, {align: 'center'});
+
+            // Disclaimer
+            const disclaimer = "This report is for estimation purposes only and does not constitute a loan offer or approval. All calculations, rates, and figures are subject to change and must be verified with a qualified, independent mortgage professional. Figures do not include costs for heating, hydro, insurance, or other property-specific expenses. Errors & Omissions Excepted (E&OE).";
+            doc.setFontSize(7).setTextColor(150, 150, 150);
+            doc.text(disclaimer, pageW / 2, pageH - 10, { align: 'center', maxWidth: pageW - 20 });
+            
+            doc.save(`Financing-Report-${address.replace(/ /g, '-')}.pdf`);
+        }
+
+
+        // --- Event Listeners ---
+        Object.values(elements).forEach(element => {
+            if (element && (element.tagName === 'INPUT' || element.tagName === 'SELECT')) {
+                element.addEventListener('input', calculateAll);
+                element.addEventListener('change', calculateAll);
+            }
+        });
+        
+        elements.generateReportBtn.addEventListener('click', generateReport);
+
+        elements.purchasePrice.addEventListener('input', () => elements.purchasePriceSlider.value = elements.purchasePrice.value);
+        elements.purchasePriceSlider.addEventListener('input', () => elements.purchasePrice.value = elements.purchasePriceSlider.value);
+
+        window.addEventListener('load', calculateAll);
+
+    </script>
+</body>
+</html>
