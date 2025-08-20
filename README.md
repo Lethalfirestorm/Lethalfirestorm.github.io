@@ -21,36 +21,36 @@
 
         <h2>Dashboards & Trackers</h2>
         <ul>
-            <li><a href="UpdatedFullCompleteDashboardPerfected2025.html">Full Complete Dashboard (2025)</a></li>
-            <li><a href="CEOCommandCenterDashboardV2.2.html">CEO Command Center Dashboard (V2.2)</a></li>
-            <li><a href="V2.0-ExpenseTrackerHSTincludedAug2025.html">Expense Tracker with HST (V2.0 Aug 2025)</a></li>
-            <li><a href="ExpenseTrackerHSTincludedAug2025.html">Expense Tracker with HST</a></li>
-            <li><a href="RevisedBusinessTravelLog2025.html">Revised Business Travel Log (2025)</a></li>
-            <li><a href="FinancialSandbox.html">Financial Sandbox</a></li>
-            <li><a href="StockandHELOC.html">Stock and HELOC Tool</a></li>
+            <li><a href="UpdatedFullCompleteDashboardPerfected2025.html" target="_blank">Full Complete Dashboard (2025)</a></li>
+            <li><a href="CEOCommandCenterDashboardV2.2.html" target="_blank">CEO Command Center Dashboard (V2.2)</a></li>
+            <li><a href="V2.0-ExpenseTrackerHSTincludedAug2025.html" target="_blank">Expense Tracker with HST (V2.0 Aug 2025)</a></li>
+            <li><a href="ExpenseTrackerHSTincludedAug2025.html" target="_blank">Expense Tracker with HST</a></li>
+            <li><a href="RevisedBusinessTravelLog2025.html" target="_blank">Revised Business Travel Log (2025)</a></li>
+            <li><a href="FinancialSandbox.html" target="_blank">Financial Sandbox</a></li>
+            <li><a href="StockandHELOC.html" target="_blank">Stock and HELOC Tool</a></li>
         </ul>
 
         <h2>CRM & Reporting Tools</h2>
         <ul>
-            <li><a href="KenMorganCRMFinalintegratedl2025.html">Ken Morgan CRM (Final Integrated 2025)</a></li>
-            <li><a href="KenMorganCRMFinal2025.html">Ken Morgan CRM (Final 2025)</a></li>
-            <li><a href="report_generator3.html">Report Generator V3</a></li>
-            <li><a href="generatereportbuttonfixed.html">Report Generator (Button Fixed)</a></li>
+            <li><a href="KenMorganCRMFinalintegratedl2025.html" target="_blank">Ken Morgan CRM (Final Integrated 2025)</a></li>
+            <li><a href="KenMorganCRMFinal2025.html" target="_blank">Ken Morgan CRM (Final 2025)</a></li>
+            <li><a href="report_generator3.html" target="_blank">Report Generator V3</a></li>
+            <li><a href="generatereportbuttonfixed.html" target="_blank">Report Generator (Button Fixed)</a></li>
         </ul>
 
         <h2>Real Estate Tools</h2>
         <ul>
-            <li><a href="2PerfectedOpenHouseMortgagePrintoutToolBrandedTabbedCalculators.html">Perfected Open House Mortgage Tool (Branded, Tabbed V2)</a></li>
-            <li><a href="PerfectedOpenHouseMortgagePrintoutToolBrandedTabbedCalculators.html">Perfected Open House Mortgage Tool (Branded, Tabbed)</a></li>
-            <li><a href="PerfectedOpenHouseMortgagePrintoutToolBranded.html">Perfected Open House Mortgage Tool (Branded)</a></li>
-            <li><a href="OpenHouseMortgagePrintoutToolBranded.html">Open House Mortgage Tool (Branded)</a></li>
-            <li><a href="OpenHouseMortgagePrintoutTool.html">Open House Mortgage Tool (Basic)</a></li>
+            <li><a href="2PerfectedOpenHouseMortgagePrintoutToolBrandedTabbedCalculators.html" target="_blank">Perfected Open House Mortgage Tool (Branded, Tabbed V2)</a></li>
+            <li><a href="PerfectedOpenHouseMortgagePrintoutToolBrandedTabbedCalculators.html" target="_blank">Perfected Open House Mortgage Tool (Branded, Tabbed)</a></li>
+            <li><a href="PerfectedOpenHouseMortgagePrintoutToolBranded.html" target="_blank">Perfected Open House Mortgage Tool (Branded)</a></li>
+            <li><a href="OpenHouseMortgagePrintoutToolBranded.html" target="_blank">Open House Mortgage Tool (Branded)</a></li>
+            <li><a href="OpenHouseMortgagePrintoutTool.html" target="_blank">Open House Mortgage Tool (Basic)</a></li>
         </ul>
 
         <h2>Expense Entry Tools</h2>
         <ul>
-            <li><a href="PerfectedmultiplecategoryselectwithnotesandHST.html">Expense Entry with Notes & HST</a></li>
-            <li><a href="Perfectedmultiplecategoryselectwithnotes.html">Expense Entry with Notes</a></li>
+            <li><a href="PerfectedmultiplecategoryselectwithnotesandHST.html" target="_blank">Expense Entry with Notes & HST</a></li>
+            <li><a href="Perfectedmultiplecategoryselectwithnotes.html" target="_blank">Expense Entry with Notes</a></li>
         </ul>
     </div>
 </body>
