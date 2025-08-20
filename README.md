@@ -1,1 +1,647 @@
 
+
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Comprehensive Financial Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dayjs@1/dayjs.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root { --bg-gray-900: #111827; --bg-gray-800: #1F2937; --bg-gray-700: #374151; --text-gray-200: #E5E7EB; --accent-blue: #3B82F6; }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: var(--bg-gray-900); }
+        ::-webkit-scrollbar-thumb { background: var(--bg-gray-700); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #4B5563; }
+        .calendar-day { transition: all 0.2s ease-in-out; position: relative; }
+        .calendar-day:hover { transform: scale(1.05); background-color: var(--bg-gray-700); }
+        .calendar-day.selected { background-color: var(--accent-blue); color: white; transform: scale(1.1); box-shadow: 0 0 15px rgba(59, 130, 246, 0.5); }
+        .has-event::after {
+            content: '';
+            position: absolute;
+            bottom: 4px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background-color: #34D399;
+        }
+        .form-input { margin-bottom: 0.75rem; }
+    </style>
+</head>
+<body class="bg-bg-gray-900 text-text-gray-200 font-sans antialiased">
+    <div class="container mx-auto p-4 lg:p-6">
+                <header class="mb-6">
+            <div class="flex flex-wrap justify-between items-center mb-4">
+                <h1 class="text-3xl md:text-4xl font-bold text-white">Financial Dashboard</h1>
+                <div class="flex items-center space-x-2 mt-4 sm:mt-0">
+                    <button id="exportJsonBtn" title="Export Data to JSON" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition duration-300 flex items-center"><i class="fas fa-file-code mr-2"></i>Export</button>
+                    <label for="importJsonInput" title="Import Data from JSON" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-lg transition duration-300 cursor-pointer flex items-center"><i class="fas fa-file-import mr-2"></i>Import</label>
+                    <input type="file" id="importJsonInput" class="hidden" accept=".json">
+                </div>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="bg-bg-gray-800 p-4 rounded-xl shadow-lg text-center">
+                    <h2 class="text-md font-semibold text-gray-400">Net Worth</h2>
+                    <p id="netWorth" class="text-3xl font-bold text-green-400">$0.00</p>
+                </div>
+                <div class="bg-bg-gray-800 p-4 rounded-xl shadow-lg text-center">
+                    <h2 class="text-md font-semibold text-gray-400">Total Assets</h2>
+                    <p id="totalAssets" class="text-3xl font-bold text-blue-400">$0.00</p>
+                </div>
+                <div class="bg-bg-gray-800 p-4 rounded-xl shadow-lg text-center">
+                    <h2 class="text-md font-semibold text-gray-400">Total Liabilities</h2>
+                    <p id="totalLiabilities" class="text-3xl font-bold text-red-400">$0.00</p>
+                </div>
+            </div>
+        </header>
+
+        <main class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+            <div class="lg:col-span-2 space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="bg-bg-gray-800 p-5 rounded-xl shadow-lg">
+                        <h3 class="text-xl font-bold mb-4 flex items-center"><i class="fas fa-wallet mr-3 text-blue-400"></i>Assets</h3>
+                        <form id="addAssetForm" class="mb-4">
+                            <input type="text" id="asset-name" placeholder="Asset Name (e.g., Checking Account)" class="form-input w-full bg-bg-gray-700 border border-gray-600 rounded-lg px-4 py-2" required>
+                            <input type="number" id="asset-value" placeholder="Current Value" step="0.01" class="form-input w-full bg-bg-gray-700 border border-gray-600 rounded-lg px-4 py-2" required>
+                            <select id="asset-type" class="form-input w-full bg-bg-gray-700 border border-gray-600 rounded-lg px-4 py-2">
+                                <option value="Bank Account">Bank Account</option>
+                                <option value="Investment">Investment</option>
+                                <option value="Property">Property</option>
+                                <option value="Other">Other</option>
+                            </select>
+                            <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg">Add Asset</button>
+                        </form>
+                        <div id="assetList" class="space-y-2 max-h-60 overflow-y-auto pr-2"></div>
+                    </div>
+                    <div class="bg-bg-gray-800 p-5 rounded-xl shadow-lg">
+                        <h3 class="text-xl font-bold mb-4 flex items-center"><i class="fas fa-credit-card mr-3 text-red-400"></i>Liabilities</h3>
+                        <form id="addLiabilityForm" class="mb-4">
+                             <input type="text" id="liability-name" placeholder="Liability Name (e.g., Mortgage)" class="form-input w-full bg-bg-gray-700 border border-gray-600 rounded-lg px-4 py-2" required>
+                            <input type="number" id="liability-amount" placeholder="Amount Owed" step="0.01" class="form-input w-full bg-bg-gray-700 border border-gray-600 rounded-lg px-4 py-2" required>
+                            <select id="liability-type" class="form-input w-full bg-bg-gray-700 border border-gray-600 rounded-lg px-4 py-2">
+                                <option value="General">General Liability</option>
+                                <option value="HELOC">HELOC</option>
+                            </select>
+                            <div id="heloc-details" class="hidden">
+                                <input type="number" id="heloc-interest" placeholder="Interest Rate (%)" step="0.01" class="form-input w-full bg-bg-gray-700 border border-gray-600 rounded-lg px-4 py-2">
+                                <input type="number" id="heloc-day" placeholder="Payment Day of Month" min="1" max="31" class="form-input w-full bg-bg-gray-700 border border-gray-600 rounded-lg px-4 py-2">
+                                <select id="heloc-account" class="form-input w-full bg-bg-gray-700 border border-gray-600 rounded-lg px-4 py-2"></select>
+                            </div>
+                            <button type="submit" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg">Add Liability</button>
+                        </form>
+                        <div id="liabilityList" class="space-y-2 max-h-60 overflow-y-auto pr-2"></div>
+                    </div>
+                </div>
+
+                <div class="bg-bg-gray-800 p-5 rounded-xl shadow-lg">
+                    <h3 class="text-xl font-bold mb-4 flex items-center"><i class="fas fa-receipt mr-3 text-indigo-400"></i>Log One-Time Transaction</h3>
+                    <form id="addTransactionForm" class="grid grid-cols-1 sm:grid-cols-2 gap-3 items-end mb-4">
+                        <input type="text" id="transaction-name" placeholder="Name (e.g., Commission)" class="form-input w-full bg-bg-gray-700 border border-gray-600 rounded-lg px-4 py-2" required>
+                        <input type="number" id="transaction-amount" placeholder="Amount" step="0.01" class="form-input w-full bg-bg-gray-700 border border-gray-600 rounded-lg px-4 py-2" required>
+                        <input type="date" id="transaction-date" class="form-input w-full bg-bg-gray-700 border border-gray-600 rounded-lg px-4 py-2" required>
+                        <select id="transaction-type" class="form-input w-full bg-bg-gray-700 border border-gray-600 rounded-lg px-4 py-2">
+                            <option value="income">Income</option>
+                            <option value="expense">Expense</option>
+                        </select>
+                        <select id="transaction-account" class="sm:col-span-2 form-input w-full bg-bg-gray-700 border border-gray-600 rounded-lg px-4 py-2" required></select>
+                        <button type="submit" class="sm:col-span-2 w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg">Log Transaction</button>
+                    </form>
+                    <div id="transactionList" class="space-y-2 max-h-60 overflow-y-auto pr-2 mt-4"></div>
+                </div>
+
+                <div class="bg-bg-gray-800 p-5 rounded-xl shadow-lg">
+                    <h3 class="text-xl font-bold mb-4 flex items-center"><i class="fas fa-sync-alt mr-3 text-teal-400"></i>Recurring Transactions</h3>
+                    <form id="addRecurringForm" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3 items-end mb-4">
+                        <input type="text" id="recurring-name" placeholder="Name (e.g., Paycheck)" class="md:col-span-2 form-input w-full bg-bg-gray-700 border border-gray-600 rounded-lg px-4 py-2" required>
+                        <input type="number" id="recurring-amount" placeholder="Amount" step="0.01" class="form-input w-full bg-bg-gray-700 border border-gray-600 rounded-lg px-4 py-2" required>
+                        <input type="number" id="recurring-day" placeholder="Day of Month" min="1" max="31" class="form-input w-full bg-bg-gray-700 border border-gray-600 rounded-lg px-4 py-2" required>
+                        <select id="recurring-type" class="form-input w-full bg-bg-gray-700 border border-gray-600 rounded-lg px-4 py-2">
+                            <option value="income">Income</option>
+                            <option value="expense">Expense</option>
+                        </select>
+                        <select id="recurring-account" class="sm:col-span-2 md:col-span-4 form-input w-full bg-bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 mt-3" required></select>
+                        <button type="submit" class="sm:col-span-2 md:col-span-1 w-full bg-teal-600 hover:bg-teal-700 text-white font-bold py-2 px-4 rounded-lg mt-3">Add</button>
+                    </form>
+                    <div id="recurringList" class="space-y-2 max-h-64 overflow-y-auto pr-2"></div>
+                </div>
+            </div>
+
+            <div class="lg:col-span-1 space-y-6">
+                <div class="bg-bg-gray-800 p-5 rounded-xl shadow-lg">
+                    <h3 class="text-xl font-bold mb-4 text-center">Breakdown</h3>
+                    <div class="h-48"><canvas id="overviewChart"></canvas></div>
+                </div>
+
+                <div class="bg-bg-gray-800 p-5 rounded-xl shadow-lg">
+                    <div class="flex justify-between items-center mb-4">
+                        <button id="prevMonth" class="px-3 py-1 bg-bg-gray-700 rounded-lg hover:bg-gray-600"><i class="fas fa-chevron-left"></i></button>
+                        <h3 id="calendarMonthYear" class="text-xl font-bold"></h3>
+                        <button id="nextMonth" class="px-3 py-1 bg-bg-gray-700 rounded-lg hover:bg-gray-600"><i class="fas fa-chevron-right"></i></button>
+                    </div>
+                    <div id="calendarGrid" class="grid grid-cols-7 gap-1 text-center mb-4"></div>
+                    <div id="projectionDetails">
+                        <h4 class="font-bold text-center text-gray-400">Click a future date to see projections</h4>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <div id="editModal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center hidden z-50">
+            <div class="bg-bg-gray-800 p-6 rounded-xl shadow-lg w-full max-w-md">
+                <h3 id="modalTitle" class="text-2xl font-bold mb-6">Edit Item</h3>
+                <div id="modalBody" class="space-y-4"></div>
+                <div class="flex justify-end space-x-4 mt-6">
+                    <button id="cancelEdit" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg">Cancel</button>
+                    <button id="saveEdit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+<script>
+class FinanceDashboard {
+    constructor() {
+        this.state = {
+            assets: [],
+            liabilities: [],
+            recurring: [],
+            transactions: [],
+            calendarDate: dayjs()
+        };
+        this.overviewChart = null;
+        this.editingItem = null;
+    }
+
+    // --- SETUP ---
+    init() {
+        this.loadState();
+        this.cacheDOMElements();
+        this.addEventListeners();
+        this.render();
+    }
+
+    cacheDOMElements() {
+        this.dom = {
+            netWorth: document.getElementById('netWorth'),
+            totalAssets: document.getElementById('totalAssets'),
+            totalLiabilities: document.getElementById('totalLiabilities'),
+            assetList: document.getElementById('assetList'),
+            liabilityList: document.getElementById('liabilityList'),
+            liabilityType: document.getElementById('liability-type'),
+            helocDetails: document.getElementById('heloc-details'),
+            helocAccount: document.getElementById('heloc-account'),
+            recurringList: document.getElementById('recurringList'),
+            transactionList: document.getElementById('transactionList'), // Added
+            recurringAccount: document.getElementById('recurring-account'),
+            transactionAccount: document.getElementById('transaction-account'),
+            calendarGrid: document.getElementById('calendarGrid'),
+            calendarMonthYear: document.getElementById('calendarMonthYear'),
+            projectionDetails: document.getElementById('projectionDetails'),
+            modal: document.getElementById('editModal'),
+            modalTitle: document.getElementById('modalTitle'),
+            modalBody: document.getElementById('modalBody'),
+        };
+    }
+
+    addEventListeners() {
+        document.getElementById('addAssetForm').addEventListener('submit', this.handleAddAsset.bind(this));
+        document.getElementById('addLiabilityForm').addEventListener('submit', this.handleAddLiability.bind(this));
+        this.dom.liabilityType.addEventListener('change', this.toggleHelocDetails.bind(this));
+        document.getElementById('addRecurringForm').addEventListener('submit', this.handleAddRecurring.bind(this));
+        document.getElementById('addTransactionForm').addEventListener('submit', this.handleAddTransaction.bind(this));
+        document.getElementById('prevMonth').addEventListener('click', () => this.changeMonth(-1));
+        document.getElementById('nextMonth').addEventListener('click', () => this.changeMonth(1));
+        this.dom.calendarGrid.addEventListener('click', this.handleCalendarClick.bind(this));
+        document.getElementById('exportJsonBtn').addEventListener('click', this.exportToJson.bind(this));
+        document.getElementById('importJsonInput').addEventListener('change', this.importFromJson.bind(this));
+        document.getElementById('cancelEdit').addEventListener('click', this.closeModal.bind(this));
+        document.getElementById('saveEdit').addEventListener('click', this.handleSaveEdit.bind(this));
+    }
+
+    // --- DATA PERSISTENCE ---
+    saveState() {
+        localStorage.setItem('financeDashboardState_v4', JSON.stringify(this.state));
+    }
+
+    loadState() {
+        const savedState = localStorage.getItem('financeDashboardState_v4');
+        if (savedState) {
+            const parsed = JSON.parse(savedState);
+            this.state = {
+                assets: [], liabilities: [], recurring: [], transactions: [],
+                ...parsed
+            };
+            this.state.calendarDate = dayjs(this.state.calendarDate);
+        }
+    }
+
+    // --- CORE RENDER LOGIC ---
+    render() {
+        const calcs = this.calculateFinancials();
+        this.dom.netWorth.textContent = formatCurrency(calcs.netWorth);
+        this.dom.totalAssets.textContent = formatCurrency(calcs.totalAssets);
+        this.dom.totalLiabilities.textContent = formatCurrency(calcs.totalLiabilities);
+                        
+        this.renderBankAccounts();
+        this.renderList(this.state.assets, this.dom.assetList, 'asset');
+        this.renderLiabilitiesList();
+        this.renderRecurringList();
+        this.renderTransactionList(); // Added
+        this.renderOverviewChart(calcs.totalAssets, calcs.totalLiabilities);
+        this.renderCalendar();
+        this.renderProjections(dayjs());
+    }
+
+    renderList(items, element, type) {
+        element.innerHTML = items.map(item => `
+            <div class="bg-bg-gray-700 p-3 rounded-lg flex justify-between items-center">
+                <div>
+                    <p class="font-bold">${item.name}</p>
+                    <p class="text-sm ${type === 'asset' ? 'text-blue-300' : 'text-red-300'}">${formatCurrency(item.value)}</p>
+                </div>
+                <div>
+                    <button onclick="window.app.openModal('${type}', '${item.id}')" class="text-yellow-400 hover:text-yellow-300 mr-2"><i class="fas fa-edit"></i></button>
+                    <button onclick="window.app.deleteItem('${type}', '${item.id}')" class="text-red-500 hover:text-red-400"><i class="fas fa-trash"></i></button>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    renderLiabilitiesList() {
+        this.dom.liabilityList.innerHTML = this.state.liabilities.map(item => `
+            <div class="bg-bg-gray-700 p-3 rounded-lg flex justify-between items-center">
+                <div>
+                    <p class="font-bold">${item.name} ${item.type === 'HELOC' ? `<span class="text-xs bg-red-500 text-white px-2 py-1 rounded-full ml-2">HELOC</span>` : ''}</p>
+                    <p class="text-sm text-red-300">${formatCurrency(item.value)} ${item.type === 'HELOC' ? `@ ${item.interestRate}%` : ''}</p>
+                </div>
+                <div>
+                    <button onclick="window.app.openModal('liability', '${item.id}')" class="text-yellow-400 hover:text-yellow-300 mr-2"><i class="fas fa-edit"></i></button>
+                    <button onclick="window.app.deleteItem('liability', '${item.id}')" class="text-red-500 hover:text-red-400"><i class="fas fa-trash"></i></button>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    renderRecurringList() {
+        this.dom.recurringList.innerHTML = this.state.recurring.map(item => {
+            const isIncome = item.type === 'income';
+            const isLinked = item.linkedLiabilityId;
+            return `
+            <div class="bg-bg-gray-700 p-3 rounded-lg flex justify-between items-center ${isLinked ? 'opacity-60' : ''}">
+                <div>
+                    <p class="font-bold">${item.name} ${isLinked ? '<i class="fas fa-link text-xs ml-2"></i>' : ''}</p>
+                    <p class="text-sm ${isIncome ? 'text-green-300' : 'text-orange-300'}">
+                        ${formatCurrency(item.amount)} on day ${item.day}
+                    </p>
+                </div>
+                <div>
+                    ${!isLinked ? `
+                    <button onclick="window.app.openModal('recurring', '${item.id}')" class="text-yellow-400 hover:text-yellow-300 mr-2"><i class="fas fa-edit"></i></button>
+                    <button onclick="window.app.deleteItem('recurring', '${item.id}')" class="text-red-500 hover:text-red-400"><i class="fas fa-trash"></i></button>
+                    ` : ''}
+                </div>
+            </div>
+        `}).join('');
+    }
+    
+    // Added function to display transactions
+    renderTransactionList() {
+        const sortedTransactions = [...this.state.transactions].sort((a, b) => dayjs(b.date).valueOf() - dayjs(a.date).valueOf());
+        this.dom.transactionList.innerHTML = sortedTransactions.map(item => {
+            const isIncome = item.type === 'income';
+            const account = this.state.assets.find(a => a.id === item.accountId);
+            return `
+                <div class="bg-bg-gray-700 p-3 rounded-lg flex justify-between items-center">
+                    <div>
+                        <p class="font-bold">${item.name}</p>
+                        <p class="text-sm ${isIncome ? 'text-green-300' : 'text-orange-300'}">
+                            ${isIncome ? '+' : '-'}${formatCurrency(item.amount)} on ${dayjs(item.date).format('MMM D, YYYY')}
+                        </p>
+                        <p class="text-xs text-gray-400">Account: ${account ? account.name : 'N/A'}</p>
+                    </div>
+                    <div>
+                        <button onclick="window.app.openModal('transaction', '${item.id}')" class="text-yellow-400 hover:text-yellow-300 mr-2"><i class="fas fa-edit"></i></button>
+                        <button onclick="window.app.deleteItem('transaction', '${item.id}')" class="text-red-500 hover:text-red-400"><i class="fas fa-trash"></i></button>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    renderBankAccounts() {
+        const bankAccounts = this.state.assets.filter(a => a.type === 'Bank Account');
+        const options = bankAccounts.map(acc => `<option value="${acc.id}">${acc.name}</option>`).join('');
+        this.dom.recurringAccount.innerHTML = options;
+        this.dom.helocAccount.innerHTML = options;
+        this.dom.transactionAccount.innerHTML = options;
+    }
+
+    renderOverviewChart(assets, liabilities) {
+        const ctx = document.getElementById('overviewChart').getContext('2d');
+        const data = {
+            labels: ['Assets', 'Liabilities'],
+            datasets: [{
+                data: [assets, liabilities],
+                backgroundColor: ['#3B82F6', '#EF4444'],
+                borderColor: '#1F2937',
+                borderWidth: 4
+            }]
+        };
+        if (this.overviewChart) {
+            this.overviewChart.data = data;
+            this.overviewChart.update();
+        } else {
+            this.overviewChart = new Chart(ctx, {
+                type: 'doughnut', data,
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: '#E5E7EB' } } } }
+            });
+        }
+    }
+
+    // --- CALENDAR & PROJECTIONS ---
+    changeMonth(direction) {
+        this.state.calendarDate = this.state.calendarDate.add(direction, 'month');
+        this.renderCalendar();
+    }
+
+    renderCalendar() {
+        this.dom.calendarMonthYear.textContent = this.state.calendarDate.format('MMMM YYYY');
+        this.dom.calendarGrid.innerHTML = '';
+        const startOfMonth = this.state.calendarDate.startOf('month');
+        const daysInMonth = this.state.calendarDate.daysInMonth();
+        const startDayOfWeek = startOfMonth.day();
+        ['S', 'M', 'T', 'W', 'T', 'F', 'S'].forEach(day => { this.dom.calendarGrid.innerHTML += `<div class="font-bold text-gray-400 text-sm">${day}</div>`; });
+        for (let i = 0; i < startDayOfWeek; i++) { this.dom.calendarGrid.innerHTML += `<div></div>`; }
+        for (let i = 1; i <= daysInMonth; i++) {
+            const dayDate = startOfMonth.date(i);
+            const isToday = dayDate.isSame(dayjs(), 'day');
+            const hasRecurringEvent = this.state.recurring.some(r => r.day === i);
+            const hasOneTimeEvent = this.state.transactions.some(t => dayjs(t.date).isSame(dayDate, 'month') && dayjs(t.date).date() === i);
+            this.dom.calendarGrid.innerHTML += `<div class="calendar-day p-2 rounded-full cursor-pointer ${isToday ? 'bg-indigo-600 text-white' : ''} ${hasRecurringEvent || hasOneTimeEvent ? 'has-event' : ''}" data-date="${dayDate.format('YYYY-MM-DD')}">${i}</div>`;
+        }
+    }
+
+    handleCalendarClick(e) {
+        if (e.target.classList.contains('calendar-day') && e.target.dataset.date) {
+            const selectedDate = dayjs(e.target.dataset.date);
+            this.renderProjections(selectedDate);
+            this.dom.calendarGrid.querySelectorAll('.calendar-day.selected').forEach(el => el.classList.remove('selected'));
+            e.target.classList.add('selected');
+        }
+    }
+
+    renderProjections(date) {
+        const calcs = this.calculateFinancials(date);
+        const recurringForDay = this.state.recurring.filter(item => item.day === date.date());
+        const oneTimeForDay = this.state.transactions.filter(item => dayjs(item.date).isSame(date, 'day'));
+        let html = `<h4 class="font-bold mb-2">Details for ${date.format('MMM D, YYYY')}</h4>`;
+        html += '<h5 class="font-semibold text-sm text-gray-400 mb-1 mt-3">Transactions on this Day</h5>';
+        if (recurringForDay.length > 0 || oneTimeForDay.length > 0) {
+            html += '<div class="space-y-1 text-sm">';
+            [...recurringForDay, ...oneTimeForDay].forEach(item => {
+                const isIncome = item.type === 'income';
+                html += `<div class="flex justify-between bg-bg-gray-700 p-2 rounded-md"><span>${item.name}</span><span class="font-semibold ${isIncome ? 'text-green-400' : 'text-red-400'}">${isIncome ? '+' : '-'}${formatCurrency(item.amount)}</span></div>`;
+            });
+            html += '</div>';
+        } else {
+            html += '<p class="text-sm text-gray-400">No transactions scheduled for this day.</p>';
+        }
+        html += '<h5 class="font-semibold text-sm text-gray-400 mb-1 mt-3">Projected End-of-Day Balances</h5>';
+        if (Object.keys(calcs.bankAccountBalances).length > 0) {
+            html += '<div class="space-y-1 text-sm">';
+            for (const accountId in calcs.bankAccountBalances) {
+                const account = this.state.assets.find(a => a.id === accountId);
+                if (account) {
+                    html += `<div class="flex justify-between bg-bg-gray-700 p-2 rounded-md"><span>${account.name}:</span> <span class="font-semibold">${formatCurrency(calcs.bankAccountBalances[accountId])}</span></div>`;
+                }
+            }
+            html += '</div>';
+        } else {
+            html += '<p class="text-sm text-gray-400">Add a bank account to see projections.</p>';
+        }
+        this.dom.projectionDetails.innerHTML = html;
+    }
+
+    // --- CALCULATION LOGIC ---
+    calculateFinancials(untilDate = dayjs()) {
+        const allTransactions = this.getAllTransactions(untilDate);
+        const bankAccountBalances = {};
+        this.state.assets.filter(a => a.type === 'Bank Account').forEach(account => {
+            const balance = allTransactions
+                .filter(t => t.accountId === account.id)
+                .reduce((acc, t) => acc + (t.type === 'income' ? t.amount : -t.amount), account.value);
+            bankAccountBalances[account.id] = balance;
+        });
+        const nonBankAssetsValue = this.state.assets
+            .filter(a => a.type !== 'Bank Account')
+            .reduce((sum, asset) => sum + asset.value, 0);
+        const totalAssets = Object.values(bankAccountBalances).reduce((sum, bal) => sum + bal, 0) + nonBankAssetsValue;
+        const totalLiabilities = this.state.liabilities.reduce((sum, liability) => sum + liability.value, 0);
+        const netWorth = totalAssets - totalLiabilities;
+        return { totalAssets, totalLiabilities, netWorth, bankAccountBalances };
+    }
+
+    getAllTransactions(untilDate) {
+        const today = dayjs();
+        const projectedRecurring = [];
+        this.state.recurring.forEach(item => {
+            let nextDate = today.date(item.day);
+            if (today.date() > item.day) { nextDate = nextDate.add(1, 'month'); }
+            while (nextDate.isBefore(untilDate) || nextDate.isSame(untilDate, 'day')) {
+                projectedRecurring.push({ ...item, date: nextDate.format('YYYY-MM-DD') });
+                nextDate = nextDate.add(1, 'month');
+            }
+        });
+        const pastAndFutureOneTime = this.state.transactions.filter(t => dayjs(t.date).isBefore(untilDate.add(1, 'day')));
+        return [...pastAndFutureOneTime, ...projectedRecurring];
+    }
+
+    // --- EVENT HANDLERS & UI ---
+    handleAddAsset(e) {
+        e.preventDefault();
+        const form = e.target;
+        this.state.assets.push({ id: `asset-${Date.now()}`, name: form['asset-name'].value, value: parseFloat(form['asset-value'].value), type: form['asset-type'].value });
+        form.reset();
+        this.saveAndRender();
+    }
+
+    handleAddLiability(e) {
+        e.preventDefault();
+        const form = e.target;
+        const newLiability = {
+            id: `liability-${Date.now()}`,
+            name: form['liability-name'].value,
+            value: parseFloat(form['liability-amount'].value),
+            type: form['liability-type'].value
+        };
+        if (newLiability.type === 'HELOC') {
+            const interestRate = parseFloat(form['heloc-interest'].value);
+            const day = parseInt(form['heloc-day'].value);
+            const accountId = form['heloc-account'].value;
+            if (!interestRate || !day || !accountId) { alert("Please fill out all HELOC details."); return; }
+            newLiability.interestRate = interestRate;
+            const interestAmount = (newLiability.value * (interestRate / 100)) / 12;
+            this.state.recurring.push({ id: `rec-${newLiability.id}`, linkedLiabilityId: newLiability.id, name: `${newLiability.name} Interest`, amount: interestAmount, day: day, type: 'expense', accountId: accountId });
+        }
+        this.state.liabilities.push(newLiability);
+        form.reset();
+        this.toggleHelocDetails();
+        this.saveAndRender();
+    }
+
+    handleAddRecurring(e) {
+        e.preventDefault();
+        const form = e.target;
+        if (!this.dom.recurringAccount.value) { alert("Please add a bank account first."); return; }
+        this.state.recurring.push({ id: `rec-${Date.now()}`, name: form['recurring-name'].value, amount: parseFloat(form['recurring-amount'].value), day: parseInt(form['recurring-day'].value), type: form['recurring-type'].value, accountId: this.dom.recurringAccount.value });
+        form.reset();
+        this.saveAndRender();
+    }
+
+    handleAddTransaction(e) {
+        e.preventDefault();
+        const form = e.target;
+        if (!this.dom.transactionAccount.value) { alert("Please add a bank account first."); return; }
+        this.state.transactions.push({ id: `trans-${Date.now()}`, name: form['transaction-name'].value, amount: parseFloat(form['transaction-amount'].value), date: form['transaction-date'].value, type: form['transaction-type'].value, accountId: this.dom.transactionAccount.value });
+        form.reset();
+        this.saveAndRender();
+    }
+
+    deleteItem(type, id) {
+        if (!confirm(`Are you sure you want to delete this ${type}?`)) return;
+        
+        const key = type === 'liability' ? 'liabilities' : (type === 'recurring' ? 'recurring' : type + 's');
+        
+        if (type === 'liability') {
+            const liability = this.state.liabilities.find(l => l.id === id);
+            if (liability && liability.type === 'HELOC') {
+                this.state.recurring = this.state.recurring.filter(r => r.linkedLiabilityId !== id);
+            }
+        }
+        
+        if (this.state[key]) {
+            this.state[key] = this.state[key].filter(item => item.id !== id);
+            this.saveAndRender();
+        } else {
+            console.error(`Could not find state array for type: ${type}`);
+        }
+    }
+
+    toggleHelocDetails() {
+        this.dom.helocDetails.classList.toggle('hidden', this.dom.liabilityType.value !== 'HELOC');
+    }
+
+    saveAndRender() {
+        this.saveState();
+        this.render();
+    }
+
+    // --- MODAL LOGIC (FULLY CORRECTED) ---
+    openModal(type, id) {
+        const key = type === 'liability' ? 'liabilities' : (type === 'recurring' ? 'recurring' : type + 's');
+        const items = this.state[key];
+        if (!items) { console.error(`Could not find state array for type: ${type}`); return; }
+        
+        const item = items.find(i => i.id === id);
+        if (!item) { console.error(`Could not find item with id: ${id} in ${key}`); return; }
+
+        this.editingItem = { type, id };
+        this.dom.modalTitle.textContent = `Edit ${type.charAt(0).toUpperCase() + type.slice(1)}`;
+        const valueKey = ['recurring', 'transaction'].includes(type) ? 'amount' : 'value';
+
+        let bodyHtml = `<input type="text" id="edit-name" value="${item.name}" class="form-input w-full bg-bg-gray-700 p-2 rounded">`;
+        bodyHtml += `<input type="number" id="edit-value" value="${item[valueKey]}" step="0.01" class="form-input w-full bg-bg-gray-700 p-2 rounded">`;
+        if (type === 'transaction') {
+            bodyHtml += `<input type="date" id="edit-date" value="${item.date}" class="form-input w-full bg-bg-gray-700 p-2 rounded">`;
+        }
+        if (type === 'liability' && item.type === 'HELOC') {
+             bodyHtml += `<input type="number" id="edit-interest" value="${item.interestRate}" step="0.01" class="form-input w-full bg-bg-gray-700 p-2 rounded" placeholder="Interest Rate (%)">`;
+        }
+
+        this.dom.modalBody.innerHTML = bodyHtml;
+        this.dom.modal.classList.remove('hidden');
+    }
+
+    closeModal() {
+        this.dom.modal.classList.add('hidden');
+        this.editingItem = null;
+    }
+
+    handleSaveEdit() {
+        if (!this.editingItem) return;
+        const { type, id } = this.editingItem;
+        const key = type === 'liability' ? 'liabilities' : (type === 'recurring' ? 'recurring' : type + 's');
+        const items = this.state[key];
+        const itemIndex = items.findIndex(i => i.id === id);
+        if (itemIndex === -1) return;
+
+        items[itemIndex].name = document.getElementById('edit-name').value;
+        const valueKey = ['recurring', 'transaction'].includes(type) ? 'amount' : 'value';
+        items[itemIndex][valueKey] = parseFloat(document.getElementById('edit-value').value);
+        if (type === 'transaction') {
+            items[itemIndex].date = document.getElementById('edit-date').value;
+        }
+        if (type === 'liability' && items[itemIndex].type === 'HELOC') {
+            const newInterest = parseFloat(document.getElementById('edit-interest').value);
+            items[itemIndex].interestRate = newInterest;
+            const linkedRecurring = this.state.recurring.find(r => r.linkedLiabilityId === id);
+            if(linkedRecurring) {
+                linkedRecurring.amount = (items[itemIndex].value * (newInterest / 100)) / 12;
+            }
+        }
+        this.saveAndRender();
+        this.closeModal();
+    }
+
+    // --- IMPORT/EXPORT ---
+    exportToJson() {
+        const dataStr = JSON.stringify(this.state);
+        const blob = new Blob([dataStr], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'financial_dashboard_data.json';
+        a.click();
+        URL.revokeObjectURL(url);
+    }
+
+    importFromJson(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const importedState = JSON.parse(e.target.result);
+                if (importedState.assets && importedState.liabilities) {
+                    this.state = importedState;
+                    this.state.calendarDate = dayjs(this.state.calendarDate);
+                    this.saveAndRender();
+                    alert('Data imported successfully!');
+                } else {
+                    alert('Invalid JSON file format.');
+                }
+            } catch (error) {
+                alert('Error parsing JSON file.');
+                console.error(error);
+            }
+        };
+        reader.readAsText(file);
+        event.target.value = '';
+    }
+}
+
+// Helper functions
+const formatCurrency = (value) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value || 0);
+        
+// --- SINGLE INITIALIZATION ---
+window.app = new FinanceDashboard();
+document.addEventListener('DOMContentLoaded', () => window.app.init());
+</script>
+</body>
+</html>
