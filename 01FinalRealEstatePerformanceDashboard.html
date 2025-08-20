@@ -1,0 +1,1076 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Real Estate Goal & Performance Dashboard V2</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/js/all.min.js"></script>
+    <style>
+        /* Custom styles for a bit of polish */
+        .tab-button {
+            transition: color 0.2s, border-color 0.2s;
+        }
+        .tab-button.active {
+            border-color: #4f46e5; /* indigo-600 */
+            color: #4f46e5;
+        }
+        .progress-bar-bg {
+            background-color: #e5e7eb; /* gray-200 */
+        }
+        .progress-bar-fill {
+            transition: width 0.5s ease-in-out;
+        }
+        .modal-backdrop {
+            background-color: rgba(0, 0, 0, 0.5);
+            transition: opacity 0.3s ease-in-out;
+        }
+        .modal-content {
+             transition: transform 0.3s ease-in-out;
+        }
+        /* Hide number input spinners */
+        input[type=number]::-webkit-inner-spin-button, 
+        input[type=number]::-webkit-outer-spin-button { 
+            -webkit-appearance: none; 
+            margin: 0; 
+        }
+        input[type=number] {
+            -moz-appearance: textfield;
+        }
+        .kpi-header {
+            grid-column: 1 / -1;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid #e5e7eb;
+            font-size: 1rem;
+            font-weight: 600;
+            color: #4f46e5;
+            margin-top: 1rem;
+            margin-bottom: 0.5rem;
+        }
+        .kpi-header:first-child {
+            margin-top: 0;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800 font-sans">
+
+    <!-- Goal Setting Modal -->
+    <div id="goalModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop hidden">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl transform scale-95 modal-content">
+            <div class="p-6 border-b border-gray-200 flex justify-between items-center">
+                <h2 class="text-2xl font-bold text-gray-800"><i class="fas fa-bullseye mr-3 text-indigo-600"></i>Set Your Annual Goals</h2>
+                <button onclick="closeGoalModal()" class="text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
+            </div>
+            <div class="p-6">
+                <form id="goalForm">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label for="goalGrossIncome" class="block text-sm font-medium text-gray-700">Gross Income Goal ($)</label>
+                            <input type="number" id="goalGrossIncome" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2" placeholder="e.g., 200000">
+                        </div>
+                        <div>
+                            <label for="goalNetIncome" class="block text-sm font-medium text-gray-700">Net Income Goal ($)</label>
+                            <input type="number" id="goalNetIncome" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2" placeholder="e.g., 150000">
+                        </div>
+                        <div>
+                            <label for="goalListingsSold" class="block text-sm font-medium text-gray-700">Listings Sold Goal</label>
+                            <input type="number" id="goalListingsSold" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2" placeholder="e.g., 12">
+                        </div>
+                        <div>
+                            <label for="goalBuyersSold" class="block text-sm font-medium text-gray-700">Buyer Sales Goal</label>
+                            <input type="number" id="goalBuyersSold" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2" placeholder="e.g., 15">
+                        </div>
+                        <div class="md:col-span-2">
+                            <label for="goalContacts" class="block text-sm font-medium text-gray-700">Total Contacts Goal</label>
+                            <input type="number" id="goalContacts" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2" placeholder="e.g., 2000">
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="px-6 py-4 bg-gray-50 rounded-b-2xl flex justify-end space-x-3">
+                <button type="button" onclick="closeGoalModal()" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300">Cancel</button>
+                <button type="button" onclick="saveGoals()" class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700">Save Goals</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Import Review Modal -->
+    <div id="importReviewModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop hidden">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-6xl h-5/6 flex flex-col transform scale-95 modal-content">
+            <div class="p-6 border-b border-gray-200 flex justify-between items-center">
+                <h2 class="text-2xl font-bold text-gray-800"><i class="fas fa-tasks mr-3 text-indigo-600"></i>Review Imported Transactions</h2>
+                <button onclick="closeImportReviewModal()" class="text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
+            </div>
+            <div class="p-6 flex-grow overflow-y-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
+                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Description</th>
+                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Amount</th>
+                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Category</th>
+                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">For</th>
+                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Remember Rule</th>
+                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="importReviewTableBody" class="bg-white divide-y divide-gray-200">
+                        <!-- Rows will be injected here -->
+                    </tbody>
+                </table>
+            </div>
+            <div class="px-6 py-4 bg-gray-50 rounded-b-2xl flex justify-end space-x-3">
+                <button type="button" onclick="closeImportReviewModal()" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300">Cancel</button>
+                <button type="button" onclick="confirmImport()" class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700">Confirm & Add to Log</button>
+            </div>
+        </div>
+    </div>
+
+
+    <div class="container mx-auto px-4 py-8">
+        <!-- Header -->
+        <header class="mb-8 text-center">
+            <h1 class="text-4xl font-bold text-indigo-800 mb-2">Real Estate Performance Dashboard</h1>
+            <p class="text-xl text-gray-600">Track activity, analyze performance, and achieve your goals.</p>
+        </header>
+
+        <!-- Global Controls -->
+        <div class="bg-white p-4 rounded-xl shadow-md mb-8">
+             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 items-end">
+                <div>
+                    <label for="filterStartDate" class="block text-sm font-medium text-gray-700">Start Date</label>
+                    <input type="date" id="filterStartDate" onchange="updateAll()" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2">
+                </div>
+                 <div>
+                    <label for="filterEndDate" class="block text-sm font-medium text-gray-700">End Date</label>
+                    <input type="date" id="filterEndDate" onchange="updateAll()" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2">
+                </div>
+                <div>
+                    <button class="w-full bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-700 text-sm" onclick="clearFilters()">Clear Dates</button>
+                </div>
+                <div class="flex space-x-2 lg:col-span-2">
+                    <button class="w-full bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 text-sm" onclick="generateReport()"><i class="fas fa-print mr-2"></i>Generate Report</button>
+                    <button class="w-full bg-teal-600 text-white px-4 py-2 rounded-md hover:bg-teal-700 text-sm" onclick="importCSV()"><i class="fas fa-upload mr-2"></i>Import CSV</button>
+                    <button class="w-full bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 text-sm" onclick="exportCSV()"><i class="fas fa-download mr-2"></i>Export CSV</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Goal Progress Section -->
+        <div class="mb-8">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-2xl font-semibold text-indigo-700 flex items-center">
+                    <i class="fas fa-flag-checkered mr-3"></i>Annual Goal Progress
+                </h2>
+                <button onclick="openGoalModal()" class="bg-indigo-600 text-white font-semibold px-4 py-2 rounded-md hover:bg-indigo-700 text-sm"><i class="fas fa-cog mr-2"></i>Set / Edit Goals</button>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6">
+                <div class="bg-white p-5 rounded-xl shadow-md"><h3 class="font-semibold text-gray-700">Gross Income</h3><p class="text-sm text-gray-500 mb-2"><span id="gross-income-current">$0</span> / <span id="gross-income-goal">$0</span></p><div class="w-full progress-bar-bg rounded-full h-2.5"><div id="gross-income-progress" class="bg-green-500 h-2.5 rounded-full progress-bar-fill" style="width: 0%"></div></div></div>
+                <div class="bg-white p-5 rounded-xl shadow-md"><h3 class="font-semibold text-gray-700">Net Income</h3><p class="text-sm text-gray-500 mb-2"><span id="net-income-current">$0</span> / <span id="net-income-goal">$0</span></p><div class="w-full progress-bar-bg rounded-full h-2.5"><div id="net-income-progress" class="bg-emerald-500 h-2.5 rounded-full progress-bar-fill" style="width: 0%"></div></div></div>
+                <div class="bg-white p-5 rounded-xl shadow-md"><h3 class="font-semibold text-gray-700">Total Sales</h3><p class="text-sm text-gray-500 mb-2"><span id="sales-current">0</span> / <span id="sales-goal">0</span></p><div class="w-full progress-bar-bg rounded-full h-2.5"><div id="sales-progress" class="bg-blue-500 h-2.5 rounded-full progress-bar-fill" style="width: 0%"></div></div></div>
+                <div class="bg-white p-5 rounded-xl shadow-md"><h3 class="font-semibold text-gray-700">Listings Sold</h3><p class="text-sm text-gray-500 mb-2"><span id="listings-sold-current">0</span> / <span id="listings-sold-goal">0</span></p><div class="w-full progress-bar-bg rounded-full h-2.5"><div id="listings-sold-progress" class="bg-purple-500 h-2.5 rounded-full progress-bar-fill" style="width: 0%"></div></div></div>
+                <div class="bg-white p-5 rounded-xl shadow-md"><h3 class="font-semibold text-gray-700">Contacts</h3><p class="text-sm text-gray-500 mb-2"><span id="contacts-current">0</span> / <span id="contacts-goal">0</span></p><div class="w-full progress-bar-bg rounded-full h-2.5"><div id="contacts-progress" class="bg-sky-500 h-2.5 rounded-full progress-bar-fill" style="width: 0%"></div></div></div>
+            </div>
+        </div>
+
+        <!-- Tab Interface -->
+        <div class="border-b border-gray-200 mb-6">
+            <nav class="-mb-px flex space-x-6" aria-label="Tabs">
+                <button class="tab-button active whitespace-nowrap py-4 px-1 border-b-2 font-medium text-lg" onclick="openTab(event, 'tabDashboard')">Dashboard</button>
+                <button class="tab-button whitespace-nowrap py-4 px-1 border-b-2 font-medium text-lg text-gray-500 hover:text-gray-700" onclick="openTab(event, 'tabLog')">Full Log</button>
+            </nav>
+        </div>
+
+        <!-- Tab Content -->
+        <div>
+            <!-- Dashboard Tab -->
+            <div id="tabDashboard" class="tab-content">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <!-- Left Column: Log an Event & Expenses -->
+                    <div class="lg:col-span-1 space-y-8">
+                        <div class="bg-white p-6 rounded-xl shadow-md">
+                            <h2 class="text-xl font-semibold mb-4 text-indigo-700 flex items-center"><i class="fas fa-edit mr-3"></i>Log an Event</h2>
+                            <form id="logForm" class="space-y-4">
+                                <div><label for="date" class="block text-sm font-medium text-gray-700">Date</label><input type="date" id="date" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2"></div>
+                                <div><label for="eventType" class="block text-sm font-medium text-gray-700">Event Type</label><select id="eventType" onchange="toggleEventFields()" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2"><option>Daily Contacts</option><option>Appointment</option><option>Presentation</option><option>Buyer Contract Signed</option><option>Listing</option><option>Sale</option><option>General Expense</option></select></div>
+                                <div id="contactFields" class="form-group"><label for="contacts" class="block text-sm font-medium text-gray-700">Number of Contacts</label><input type="number" id="contacts" value="0" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2"></div>
+                                <div id="leadSourceFields" class="form-group"><label for="leadSource" class="block text-sm font-medium text-gray-700">Lead Source</label><select id="leadSource" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2"><option>Referral</option><option>Online Ad</option><option>Open House</option><option>Cold Call</option><option>Social Media</option><option>Other</option></select></div>
+                                <div id="saleTypeFields" class="hidden pt-2"><label class="block text-sm font-medium text-gray-700">Sale Type</label><div class="mt-2 flex items-center space-x-4"><label class="flex items-center"><input type="radio" name="saleType" value="listing" class="h-4 w-4 text-indigo-600 border-gray-300" checked><span class="ml-2">My Listing</span></label><label class="flex items-center"><input type="radio" name="saleType" value="buyer" class="h-4 w-4 text-indigo-600 border-gray-300"><span class="ml-2">My Buyer</span></label></div></div>
+                                <div id="saleFields" class="hidden space-y-4 pt-2 border-t"><p class="text-center font-semibold text-gray-600">Financial Details</p><div><label for="homeValue" class="block text-sm font-medium">Final Sale Price ($)</label><input type="number" id="homeValue" class="mt-1 w-full p-2 border rounded-md"></div><div><label for="commissionRate" class="block text-sm font-medium">Your Commission Rate (%)</label><input type="number" id="commissionRate" step="0.01" class="mt-1 w-full p-2 border rounded-md"></div><div><label for="brokerSplit" class="block text-sm font-medium">Broker Commission Split (%)</label><input type="number" id="brokerSplit" step="0.01" value="0" class="mt-1 w-full p-2 border rounded-md"></div><div><label for="brokerFee" class="block text-sm font-medium">Broker Deal Fee ($)</label><input type="number" id="brokerFee" value="0" class="mt-1 w-full p-2 border rounded-md"></div><div><label for="expenses" class="block text-sm font-medium">Other Expenses ($)</label><input type="number" id="expenses" value="0" class="mt-1 w-full p-2 border rounded-md"></div></div>
+                                <div id="expenseFields" class="hidden space-y-4 pt-2 border-t">
+                                    <p class="text-center font-semibold text-gray-600">Expense Details</p>
+                                    <div><label for="expenseCategory" class="block text-sm font-medium">Expense Category</label><select id="expenseCategory" class="mt-1 w-full p-2 border rounded-md"></select></div>
+                                    <div><label for="expenseAmount" class="block text-sm font-medium">Expense Amount ($)</label><input type="number" id="expenseAmount" class="mt-1 w-full p-2 border rounded-md"></div>
+                                    <div><label class="block text-sm font-medium text-gray-700">Expense For</label><div class="mt-2 flex items-center space-x-4"><label class="flex items-center"><input type="radio" name="expenseFor" value="general" class="h-4 w-4 text-indigo-600 border-gray-300" checked><span class="ml-2">General</span></label><label class="flex items-center"><input type="radio" name="expenseFor" value="listing" class="h-4 w-4 text-indigo-600 border-gray-300"><span class="ml-2">Listing</span></label><label class="flex items-center"><input type="radio" name="expenseFor" value="buyer" class="h-4 w-4 text-indigo-600 border-gray-300"><span class="ml-2">Buyer</span></label></div></div>
+                                </div>
+                                <div><label for="notes" class="block text-sm font-medium text-gray-700">Notes</label><textarea id="notes" rows="3" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2"></textarea></div>
+                                <button type="submit" class="w-full bg-indigo-600 text-white font-bold py-3 px-4 rounded-md hover:bg-indigo-700">Log This Event</button>
+                            </form>
+                        </div>
+                        <div class="bg-white p-6 rounded-xl shadow-md">
+                            <h2 class="text-xl font-semibold mb-4 text-indigo-700 flex items-center"><i class="fas fa-receipt mr-3"></i>Expense Summary by Category</h2>
+                            <div class="h-64 mb-4"><canvas id="expenseSummaryPieChart"></canvas></div>
+                            <div id="expenseSummaryContainer" class="space-y-2 max-h-64 overflow-y-auto">
+                                <!-- Itemized expenses will be injected here -->
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Right Column: KPIs and Charts -->
+                    <div class="lg:col-span-2">
+                         <h2 class="text-xl font-semibold mb-4 text-indigo-700 flex items-center"><i class="fas fa-chart-bar mr-3"></i>Key Performance Indicators <span id="glance-period" class="text-sm text-gray-500 ml-2">(All Time)</span></h2>
+                        <div id="kpi-grid" class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            <div class="kpi-header">Financials</div>
+                            <div class="bg-white p-3 rounded-xl shadow-md text-center"><h3 class="text-sm font-medium text-gray-500">Gross Income</h3><p id="totalGrossIncome" class="text-xl font-bold text-green-600 mt-1">$0.00</p></div>
+                            <div class="bg-white p-3 rounded-xl shadow-md text-center"><h3 class="text-sm font-medium text-gray-500">Total Expenses</h3><p id="totalExpenses" class="text-xl font-bold text-red-600 mt-1">$0.00</p></div>
+                            <div class="bg-white p-3 rounded-xl shadow-md text-center col-span-2"><h3 class="text-sm font-medium text-gray-500">Net Income</h3><p id="totalNetCommission" class="text-2xl font-bold text-emerald-600 mt-1">$0.00</p></div>
+                            <div class="bg-white p-3 rounded-xl shadow-md text-center"><h3 class="text-sm font-medium text-gray-500">Gross (Listings)</h3><p id="grossIncomeListings" class="text-xl font-bold text-purple-600 mt-1">$0.00</p></div>
+                            <div class="bg-white p-3 rounded-xl shadow-md text-center"><h3 class="text-sm font-medium text-gray-500">Gross (Buyers)</h3><p id="grossIncomeBuyers" class="text-xl font-bold text-sky-600 mt-1">$0.00</p></div>
+                            <div class="bg-white p-3 rounded-xl shadow-md text-center"><h3 class="text-sm font-medium text-gray-500">Net (Listings)</h3><p id="netIncomeListings" class="text-xl font-bold text-purple-700 mt-1">$0.00</p></div>
+                            <div class="bg-white p-3 rounded-xl shadow-md text-center"><h3 class="text-sm font-medium text-gray-500">Net (Buyers)</h3><p id="netIncomeBuyers" class="text-xl font-bold text-sky-700 mt-1">$0.00</p></div>
+                            
+                            <div class="kpi-header">Expenses Breakdown</div>
+                            <div class="bg-white p-3 rounded-xl shadow-md text-center"><h3 class="text-sm font-medium text-gray-500">Broker Split (List.)</h3><p id="brokerSplitListings" class="text-xl font-bold text-red-500 mt-1">$0.00</p></div>
+                            <div class="bg-white p-3 rounded-xl shadow-md text-center"><h3 class="text-sm font-medium text-gray-500">Broker Split (Buy.)</h3><p id="brokerSplitBuyers" class="text-xl font-bold text-red-500 mt-1">$0.00</p></div>
+                            <div class="bg-white p-3 rounded-xl shadow-md text-center"><h3 class="text-sm font-medium text-gray-500">Broker Fees (List.)</h3><p id="brokerFeesListings" class="text-xl font-bold text-red-500 mt-1">$0.00</p></div>
+                            <div class="bg-white p-3 rounded-xl shadow-md text-center"><h3 class="text-sm font-medium text-gray-500">Broker Fees (Buy.)</h3><p id="brokerFeesBuyers" class="text-xl font-bold text-red-500 mt-1">$0.00</p></div>
+                            <div class="bg-white p-3 rounded-xl shadow-md text-center"><h3 class="text-sm font-medium text-gray-500">Expenses (List.)</h3><p id="expensesFromListings" class="text-xl font-bold text-red-500 mt-1">$0.00</p></div>
+                            <div class="bg-white p-3 rounded-xl shadow-md text-center"><h3 class="text-sm font-medium text-gray-500">Expenses (Buy.)</h3><p id="expensesFromBuyers" class="text-xl font-bold text-red-500 mt-1">$0.00</p></div>
+                            <div class="bg-white p-3 rounded-xl shadow-md text-center"><h3 class="text-sm font-medium text-gray-500">Monthly Fees</h3><p id="totalMonthlyFees" class="text-xl font-bold text-red-500 mt-1">$0.00</p></div>
+                            <div class="bg-white p-3 rounded-xl shadow-md text-center"><h3 class="text-sm font-medium text-gray-500">General Expenses</h3><p id="totalGeneralExpenses" class="text-xl font-bold text-red-500 mt-1">$0.00</p></div>
+
+                            <div class="kpi-header">Activity & Efficiency</div>
+                            <div class="bg-white p-3 rounded-xl shadow-md text-center"><h3 class="text-sm font-medium text-gray-500">Total Sales</h3><p id="totalSales" class="text-xl font-bold text-green-600 mt-1">0</p></div>
+                            <div class="bg-white p-3 rounded-xl shadow-md text-center"><h3 class="text-sm font-medium text-gray-500">Total Contacts</h3><p id="totalContacts" class="text-xl font-bold text-blue-600 mt-1">0</p></div>
+                            <div class="bg-white p-3 rounded-xl shadow-md text-center"><h3 class="text-sm font-medium text-gray-500">Appointments</h3><p id="totalAppointments" class="text-xl font-bold text-blue-600 mt-1">0</p></div>
+                            <div class="bg-white p-3 rounded-xl shadow-md text-center"><h3 class="text-sm font-medium text-gray-500">Presentations</h3><p id="totalPresentations" class="text-xl font-bold text-blue-600 mt-1">0</p></div>
+                            <div class="bg-white p-3 rounded-xl shadow-md text-center"><h3 class="text-sm font-medium text-gray-500">Listings Taken</h3><p id="totalListings" class="text-xl font-bold text-purple-600 mt-1">0</p></div>
+                            <div class="bg-white p-3 rounded-xl shadow-md text-center"><h3 class="text-sm font-medium text-gray-500">Buyer Contracts</h3><p id="totalBuyerContracts" class="text-xl font-bold text-sky-600 mt-1">0</p></div>
+                            <div class="bg-white p-3 rounded-xl shadow-md text-center"><h3 class="text-sm font-medium text-gray-500">Listing Conversion</h3><p id="listingConversionRate" class="text-xl font-bold text-gray-700 mt-1">0.0%</p></div>
+                            <div class="bg-white p-3 rounded-xl shadow-md text-center"><h3 class="text-sm font-medium text-gray-500">Buyer Conversion</h3><p id="buyerConversionRate" class="text-xl font-bold text-gray-700 mt-1">0.0%</p></div>
+                            <div class="bg-white p-3 rounded-xl shadow-md text-center"><h3 class="text-sm font-medium text-gray-500">Days Worked</h3><p id="totalDaysWorked" class="text-xl font-bold text-gray-700 mt-1">0</p></div>
+                            <div class="bg-white p-3 rounded-xl shadow-md text-center"><h3 class="text-sm font-medium text-gray-500">Avg Days/Week</h3><p id="avgDaysPerWeek" class="text-xl font-bold text-gray-700 mt-1">0.0</p></div>
+                            <div class="bg-white p-3 rounded-xl shadow-md text-center"><h3 class="text-sm font-medium text-gray-500">Gross / Day</h3><p id="incomePerDay" class="text-xl font-bold text-green-500 mt-1">$0.00</p></div>
+                            <div class="bg-white p-3 rounded-xl shadow-md text-center"><h3 class="text-sm font-medium text-gray-500">Income / Contact</h3><p id="incomePerContact" class="text-xl font-bold text-orange-500 mt-1">$0.00</p></div>
+                        </div>
+                        <!-- Charts Section -->
+                        <div class="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            <div class="bg-white p-6 rounded-xl shadow-md"><h3 class="font-semibold mb-2">Sales Funnel Efficiency</h3><div class="h-64"><canvas id="efficiencyChart"></canvas></div></div>
+                            <div class="bg-white p-6 rounded-xl shadow-md"><h3 class="font-semibold mb-2">Contacts by Lead Source</h3><div class="h-64"><canvas id="contactSourcePieChart"></canvas></div></div>
+                            <div class="bg-white p-6 rounded-xl shadow-md"><h3 class="font-semibold mb-2">Listings by Lead Source</h3><div class="h-64"><canvas id="listingSourcePieChart"></canvas></div></div>
+                            <div class="bg-white p-6 rounded-xl shadow-md"><h3 class="font-semibold mb-2">Buyer Contracts by Source</h3><div class="h-64"><canvas id="buyerSourcePieChart"></canvas></div></div>
+                            <div class="bg-white p-6 rounded-xl shadow-md"><h3 class="font-semibold mb-2">Listing Sale Breakdown</h3><div class="h-64"><canvas id="listingSalesBreakdownChart"></canvas></div></div>
+                            <div class="bg-white p-6 rounded-xl shadow-md"><h3 class="font-semibold mb-2">Buyer Sale Breakdown</h3><div class="h-64"><canvas id="buyerSalesBreakdownChart"></canvas></div></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Monthly Activity Trends Chart -->
+                <div class="mt-8 bg-white p-6 rounded-xl shadow-md">
+                    <h2 class="text-xl font-semibold mb-4 text-indigo-700 flex items-center"><i class="fas fa-chart-line mr-3"></i>Monthly Activity Trends</h2>
+                    <div class="h-80"><canvas id="monthlyActivityChart"></canvas></div>
+                </div>
+
+                <!-- "What If" Scenario Planner -->
+                <div id="whatIfPlanner" class="mt-8 bg-white p-6 rounded-xl shadow-md">
+                    <h2 class="text-xl font-semibold mb-4 text-indigo-700 flex items-center"><i class="fas fa-magic mr-3"></i>"What If" Scenario Planner</h2>
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+                        <div class="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div><label for="wifIncomeGoal" class="block text-sm font-medium">Target Annual Gross Income ($)</label><input type="number" id="wifIncomeGoal" value="200000" oninput="calculateScenario()" class="mt-1 w-full p-2 border rounded-md"></div>
+                            <div><label for="wifAvgCommission" class="block text-sm font-medium">Avg. Commission Per Sale ($)</label><input type="number" id="wifAvgCommission" value="10000" oninput="calculateScenario()" class="mt-1 w-full p-2 border rounded-md"></div>
+                            <div><label for="wifConversionRate" class="block text-sm font-medium">Contact-to-Sale Conversion Rate (%)</label><input type="number" id="wifConversionRate" value="1" step="0.1" oninput="calculateScenario()" class="mt-1 w-full p-2 border rounded-md"></div>
+                            <div><label for="wifDaysWorked" class="block text-sm font-medium">Days You Plan to Work</label><div class="mt-1 flex"><button onclick="adjustWifDays(-1)" class="px-3 bg-gray-200 rounded-l-md">-</button><input type="number" id="wifDaysWorked" value="250" oninput="calculateScenario()" class="w-full p-2 border-t border-b text-center"><button onclick="adjustWifDays(1)" class="px-3 bg-gray-200 rounded-r-md">+</button></div></div>
+                            <div class="md:col-span-2 grid grid-cols-3 gap-2 text-center text-sm"><button onclick="setWifDays(52*5)" class="bg-gray-100 p-2 rounded-md hover:bg-gray-200">Full-Time (260)</button><button onclick="setWifDays(52*4)" class="bg-gray-100 p-2 rounded-md hover:bg-gray-200">4 Days/Wk (208)</button><button onclick="setWifDays(52*3)" class="bg-gray-100 p-2 rounded-md hover:bg-gray-200">Part-Time (156)</button></div>
+                        </div>
+                        <div class="text-center"><h3 class="font-semibold mb-2">Your Daily Target</h3><p class="text-5xl font-bold text-indigo-600" id="wifResult">0</p><p class="text-gray-600">contacts per workday</p><div class="h-48 mt-4"><canvas id="wifChart"></canvas></div></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Full Log Tab -->
+            <div id="tabLog" class="tab-content hidden">
+                <div class="bg-white p-6 rounded-xl shadow-md">
+                     <div class="flex flex-col md:flex-row justify-between items-center mb-4">
+                        <h2 class="text-xl font-semibold text-indigo-700">Complete Event Log</h2>
+                        <div class="flex items-center space-x-4 mt-4 md:mt-0">
+                            <select id="sortLogBy" onchange="renderFullLog()" class="rounded-md border-gray-300 shadow-sm p-2"><option value="newest">Sort By: Newest First</option><option value="oldest">Sort By: Oldest First</option><option value="eventType">Sort By: Event Type</option><option value="amount">Sort By: Gross Commission</option></select>
+                            <button onclick="resetAllData()" class="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 text-sm"><i class="fas fa-trash-alt mr-2"></i>Reset All Data</button>
+                        </div>
+                    </div>
+                    <div id="fullLogContainer" class="space-y-3 mt-4"></div>
+                </div>
+            </div>
+        </div>
+        <div id="saveStatus" class="text-center text-sm text-gray-500 mt-8"></div>
+    </div>
+
+<script>
+// --- GLOBAL STATE & INITIALIZATION ---
+let logEntries = [];
+let goals = { grossIncome: 0, netIncome: 0, listingsSold: 0, buyersSold: 0, contacts: 0 };
+let categorizationRules = {};
+let efficiencyChart, contactSourcePieChart, listingSourcePieChart, buyerSourcePieChart, wifChart, monthlyActivityChart, expenseSummaryPieChart, listingSalesBreakdownChart, buyerSalesBreakdownChart;
+let temporaryImportedExpenses = [];
+
+window.onload = () => {
+    document.getElementById('date').value = new Date().toISOString().split('T')[0];
+    populateExpenseDropdown();
+    initializeCharts();
+    
+    // Use a more specific key to avoid conflicts
+    const savedState = localStorage.getItem('realEstateDashboardState_v7');
+    if (savedState) {
+        const state = JSON.parse(savedState);
+        logEntries = state.logEntries || [];
+        goals = state.goals || { grossIncome: 0, netIncome: 0, listingsSold: 0, buyersSold: 0, contacts: 0 };
+        categorizationRules = state.categorizationRules || {};
+    }
+    
+    Object.keys(goals).forEach(key => {
+        const el = document.getElementById(`goal${key.charAt(0).toUpperCase() + key.slice(1)}`);
+        if (el) el.value = goals[key] || '';
+    });
+
+    updateAll();
+    toggleEventFields();
+    calculateScenario();
+    
+    // Event delegation for delete buttons
+    document.getElementById('fullLogContainer').addEventListener('click', function(e) {
+        if (e.target && e.target.matches('button.delete-btn')) {
+            const entryId = parseInt(e.target.dataset.id);
+            deleteLogEntry(entryId);
+        }
+    });
+
+    document.getElementById('importReviewTableBody').addEventListener('click', function(e) {
+        if (e.target.classList.contains('delete-import-row')) {
+            const row = e.target.closest('tr');
+            row.remove();
+        }
+    });
+};
+
+// --- UI & MODAL MANAGEMENT ---
+const openTab = (evt, tabName) => {
+    document.querySelectorAll('.tab-content').forEach(tab => tab.classList.add('hidden'));
+    document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove("active"));
+    document.getElementById(tabName).classList.remove('hidden');
+    evt.currentTarget.classList.add("active");
+};
+
+const openGoalModal = () => {
+    const modal = document.getElementById('goalModal');
+    modal.classList.remove('hidden');
+    setTimeout(() => {
+        modal.querySelector('.modal-content').classList.remove('scale-95');
+    }, 10);
+};
+
+const closeGoalModal = () => {
+    const modal = document.getElementById('goalModal');
+    modal.querySelector('.modal-content').classList.add('scale-95');
+    setTimeout(() => modal.classList.add('hidden'), 300);
+};
+
+const openImportReviewModal = () => {
+    const modal = document.getElementById('importReviewModal');
+    modal.classList.remove('hidden');
+    setTimeout(() => {
+        modal.querySelector('.modal-content').classList.remove('scale-95');
+    }, 10);
+};
+
+const closeImportReviewModal = () => {
+    const modal = document.getElementById('importReviewModal');
+    modal.querySelector('.modal-content').classList.add('scale-95');
+    setTimeout(() => modal.classList.add('hidden'), 300);
+    temporaryImportedExpenses = []; // Clear temp data on close
+};
+
+const toggleEventFields = () => {
+    const eventType = document.getElementById('eventType').value;
+    const isSale = eventType === 'Sale';
+    const isExpense = eventType === 'General Expense';
+    
+    document.getElementById('saleFields').classList.toggle('hidden', !isSale);
+    document.getElementById('saleTypeFields').classList.toggle('hidden', !isSale);
+    document.getElementById('expenseFields').classList.toggle('hidden', !isExpense);
+    
+    const showContacts = !isSale && !isExpense;
+    document.getElementById('contactFields').classList.toggle('hidden', !showContacts && eventType !== 'Daily Contacts');
+    
+    const showLeadSource = eventType !== 'General Expense';
+    document.getElementById('leadSourceFields').classList.toggle('hidden', !showLeadSource);
+};
+
+// --- GOAL MANAGEMENT ---
+const saveGoals = () => {
+    goals.grossIncome = parseFloat(document.getElementById('goalGrossIncome').value) || 0;
+    goals.netIncome = parseFloat(document.getElementById('goalNetIncome').value) || 0;
+    goals.listingsSold = parseInt(document.getElementById('goalListingsSold').value) || 0;
+    goals.buyersSold = parseInt(document.getElementById('goalBuyersSold').value) || 0;
+    goals.contacts = parseInt(document.getElementById('goalContacts').value) || 0;
+    
+    updateAll();
+    alert('Goals saved successfully!');
+    closeGoalModal();
+};
+
+const updateGoalProgress = (totals) => {
+    document.getElementById('gross-income-goal').textContent = formatCurrency(goals.grossIncome);
+    document.getElementById('net-income-goal').textContent = formatCurrency(goals.netIncome);
+    const totalSalesGoal = (goals.listingsSold || 0) + (goals.buyersSold || 0);
+    document.getElementById('sales-goal').textContent = totalSalesGoal;
+    document.getElementById('listings-sold-goal').textContent = goals.listingsSold || 0;
+    document.getElementById('contacts-goal').textContent = goals.contacts || 0;
+
+
+    const updateBar = (current, goal, elementId) => {
+        const percentage = goal > 0 ? (current / goal) * 100 : 0;
+        document.getElementById(elementId).style.width = `${Math.min(percentage, 100)}%`;
+    };
+
+    updateBar(totals.totalGrossCommission, goals.grossIncome, 'gross-income-progress');
+    updateBar(totals.netCommission, goals.netIncome, 'net-income-progress');
+    updateBar(totals.totalSales, totalSalesGoal, 'sales-progress');
+    updateBar(totals.listingsSold, goals.listingsSold, 'listings-sold-progress');
+    updateBar(totals.contacts, goals.contacts, 'contacts-progress');
+
+    document.getElementById('gross-income-current').textContent = formatCurrency(totals.totalGrossCommission);
+    document.getElementById('net-income-current').textContent = formatCurrency(totals.netCommission);
+    document.getElementById('sales-current').textContent = totals.totalSales;
+    document.getElementById('listings-sold-current').textContent = totals.listingsSold;
+    document.getElementById('contacts-current').textContent = totals.contacts;
+};
+
+// --- CORE LOGIC & DATA HANDLING ---
+document.getElementById('logForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const eventType = document.getElementById('eventType').value;
+    let entry = {
+        id: Date.now(),
+        date: document.getElementById('date').value,
+        eventType,
+        notes: document.getElementById('notes').value,
+        leadSource: document.getElementById('leadSource').value,
+        contacts: 0, homeValue: 0, commissionRate: 0, grossCommission: 0, 
+        expenses: 0, saleType: null, brokerSplit: 0, brokerFee: 0,
+        expenseCategory: null, expenseAmount: 0, expenseFor: 'general'
+    };
+
+    if (eventType === 'General Expense') {
+        entry.expenseCategory = document.getElementById('expenseCategory').value;
+        entry.expenseAmount = parseFloat(document.getElementById('expenseAmount').value) || 0;
+        entry.expenseFor = document.querySelector('input[name="expenseFor"]:checked').value;
+        entry.leadSource = null; // Not applicable
+    } else if (eventType === 'Sale') {
+        entry.homeValue = parseFloat(document.getElementById('homeValue').value) || 0;
+        entry.commissionRate = parseFloat(document.getElementById('commissionRate').value) || 0;
+        entry.expenses = parseFloat(document.getElementById('expenses').value) || 0;
+        entry.grossCommission = (entry.homeValue * entry.commissionRate) / 100;
+        entry.saleType = document.querySelector('input[name="saleType"]:checked').value;
+        entry.brokerSplit = parseFloat(document.getElementById('brokerSplit').value) || 0;
+        entry.brokerFee = parseFloat(document.getElementById('brokerFee').value) || 0;
+    } else if (eventType === 'Daily Contacts') {
+        entry.contacts = parseInt(document.getElementById('contacts').value) || 0;
+    }
+    
+    logEntries.push(entry);
+    updateAll();
+    e.target.reset();
+    document.getElementById('date').value = new Date().toISOString().split('T')[0];
+    toggleEventFields();
+});
+
+function updateAll() {
+    const displayEntries = getFilteredEntries();
+
+    const totals = displayEntries.reduce((acc, entry) => {
+        const splitAmount = entry.grossCommission * (entry.brokerSplit / 100);
+        
+        if (entry.eventType === 'Daily Contacts') acc.contacts += entry.contacts;
+        if (entry.eventType === 'Appointment') acc.appointments++;
+        if (entry.eventType === 'Presentation') acc.presentations++;
+        if (entry.eventType === 'Listing') acc.listings++;
+        if (entry.eventType === 'Buyer Contract Signed') acc.buyerContracts++;
+        if (entry.eventType === 'General Expense') {
+            if (entry.expenseFor === 'listing') {
+                acc.expensesFromListings += entry.expenseAmount;
+            } else if (entry.expenseFor === 'buyer') {
+                acc.expensesFromBuyers += entry.expenseAmount;
+            } else { // general
+                 if (entry.expenseCategory === 'Monthly Brokerage Fee') {
+                    acc.monthlyFees += entry.expenseAmount;
+                } else {
+                    acc.generalExpenses += entry.expenseAmount;
+                }
+            }
+        }
+        
+        if (entry.eventType === 'Sale') {
+            if (entry.saleType === 'listing') {
+                acc.listingsSold++;
+                acc.incomeFromListings += entry.grossCommission;
+                acc.expensesFromListings += entry.expenses;
+                acc.brokerSplitFromListings += splitAmount;
+                acc.brokerFeesFromListings += entry.brokerFee;
+            } else if (entry.saleType === 'buyer') {
+                acc.buyersSold++;
+                acc.incomeFromBuyers += entry.grossCommission;
+                acc.expensesFromBuyers += entry.expenses;
+                acc.brokerSplitFromBuyers += splitAmount;
+                acc.brokerFeesFromBuyers += entry.brokerFee;
+            }
+        }
+        return acc;
+    }, { 
+        contacts: 0, appointments: 0, presentations: 0, listings: 0, buyerContracts: 0,
+        listingsSold: 0, buyersSold: 0, generalExpenses: 0, monthlyFees: 0,
+        incomeFromListings: 0, expensesFromListings: 0, brokerSplitFromListings: 0, brokerFeesFromListings: 0,
+        incomeFromBuyers: 0, expensesFromBuyers: 0, brokerSplitFromBuyers: 0, brokerFeesFromBuyers: 0
+    });
+    
+    // Calculate derived totals
+    totals.totalGrossCommission = totals.incomeFromListings + totals.incomeFromBuyers;
+    totals.netIncomeListings = totals.incomeFromListings - totals.expensesFromListings - totals.brokerSplitFromListings - totals.brokerFeesFromListings;
+    totals.netIncomeBuyers = totals.incomeFromBuyers - totals.expensesFromBuyers - totals.brokerSplitFromBuyers - totals.brokerFeesFromBuyers;
+    
+    totals.totalExpenses = totals.brokerSplitFromListings + totals.brokerSplitFromBuyers + totals.brokerFeesFromListings + totals.brokerFeesFromBuyers + totals.expensesFromListings + totals.expensesFromBuyers + totals.monthlyFees + totals.generalExpenses;
+    totals.netCommission = totals.totalGrossCommission - totals.totalExpenses;
+    totals.totalSales = totals.listingsSold + totals.buyersSold;
+    
+    const dateSet = new Set(displayEntries.map(e => e.date));
+    totals.daysWorked = dateSet.size;
+    let avgDaysPerWeek = 0;
+    if (dateSet.size > 0) {
+        const sortedDates = Array.from(dateSet).sort();
+        const firstDay = new Date(sortedDates[0]);
+        const lastDay = new Date(sortedDates[sortedDates.length - 1]);
+        const daySpan = (lastDay - firstDay) / (1000 * 60 * 60 * 24) + 1;
+        const weekSpan = Math.max(1, daySpan / 7);
+        avgDaysPerWeek = (totals.daysWorked / weekSpan);
+    }
+
+    // Update Dashboard KPIs
+    document.getElementById('totalGrossIncome').textContent = formatCurrency(totals.totalGrossCommission);
+    document.getElementById('totalExpenses').textContent = formatCurrency(totals.totalExpenses);
+    document.getElementById('totalNetCommission').textContent = formatCurrency(totals.netCommission);
+    document.getElementById('grossIncomeListings').textContent = formatCurrency(totals.incomeFromListings);
+    document.getElementById('grossIncomeBuyers').textContent = formatCurrency(totals.incomeFromBuyers);
+    document.getElementById('netIncomeListings').textContent = formatCurrency(totals.netIncomeListings);
+    document.getElementById('netIncomeBuyers').textContent = formatCurrency(totals.netIncomeBuyers);
+    
+    document.getElementById('brokerSplitListings').textContent = formatCurrency(totals.brokerSplitFromListings);
+    document.getElementById('brokerSplitBuyers').textContent = formatCurrency(totals.brokerSplitFromBuyers);
+    document.getElementById('brokerFeesListings').textContent = formatCurrency(totals.brokerFeesFromListings);
+    document.getElementById('brokerFeesBuyers').textContent = formatCurrency(totals.brokerFeesFromBuyers);
+    document.getElementById('expensesFromListings').textContent = formatCurrency(totals.expensesFromListings);
+    document.getElementById('expensesFromBuyers').textContent = formatCurrency(totals.expensesFromBuyers);
+    document.getElementById('totalMonthlyFees').textContent = formatCurrency(totals.monthlyFees);
+    document.getElementById('totalGeneralExpenses').textContent = formatCurrency(totals.generalExpenses);
+    
+    document.getElementById('totalSales').textContent = totals.totalSales.toLocaleString();
+    document.getElementById('totalContacts').textContent = totals.contacts.toLocaleString();
+    document.getElementById('totalAppointments').textContent = totals.appointments.toLocaleString();
+    document.getElementById('totalPresentations').textContent = totals.presentations.toLocaleString();
+    document.getElementById('totalDaysWorked').textContent = totals.daysWorked;
+    document.getElementById('avgDaysPerWeek').textContent = avgDaysPerWeek.toFixed(1);
+    document.getElementById('incomePerDay').textContent = formatCurrency(totals.daysWorked > 0 ? totals.totalGrossCommission / totals.daysWorked : 0);
+    document.getElementById('incomePerContact').textContent = formatCurrency(totals.contacts > 0 ? totals.totalGrossCommission / totals.contacts : 0);
+    document.getElementById('totalListings').textContent = totals.listings.toLocaleString();
+    document.getElementById('totalBuyerContracts').textContent = totals.buyerContracts.toLocaleString();
+    document.getElementById('listingConversionRate').textContent = `${(totals.listings > 0 ? (totals.listingsSold / totals.listings) * 100 : 0).toFixed(1)}%`;
+    document.getElementById('buyerConversionRate').textContent = `${(totals.buyerContracts > 0 ? (totals.buyersSold / totals.buyerContracts) * 100 : 0).toFixed(1)}%`;
+
+    updateGoalProgress(totals);
+    updateAllCharts(displayEntries, totals);
+    renderFullLog();
+    renderExpenseSummary();
+    saveStateToLocalStorage();
+}
+
+// --- "WHAT IF" PLANNER ---
+function calculateScenario() {
+    const incomeGoal = parseFloat(document.getElementById('wifIncomeGoal').value) || 0;
+    const avgCommission = parseFloat(document.getElementById('wifAvgCommission').value) || 0;
+    const conversionRate = parseFloat(document.getElementById('wifConversionRate').value) || 0;
+    const daysWorked = parseInt(document.getElementById('wifDaysWorked').value) || 0;
+
+    const salesNeeded = avgCommission > 0 ? incomeGoal / avgCommission : 0;
+    const contactsNeeded = conversionRate > 0 ? salesNeeded / (conversionRate / 100) : 0;
+    const contactsPerDay = daysWorked > 0 ? contactsNeeded / daysWorked : 0;
+
+    document.getElementById('wifResult').textContent = contactsPerDay.toFixed(1);
+
+    wifChart.data.labels = [`Sales Needed (${salesNeeded.toFixed(1)})`, `Contacts Needed (${contactsNeeded.toFixed(0)})`];
+    wifChart.data.datasets[0].data = [salesNeeded, contactsNeeded];
+    wifChart.update();
+}
+
+const adjustWifDays = (amount) => {
+    const input = document.getElementById('wifDaysWorked');
+    input.value = Math.max(0, parseInt(input.value) + amount);
+    calculateScenario();
+};
+const setWifDays = (days) => {
+    document.getElementById('wifDaysWorked').value = days;
+    calculateScenario();
+};
+
+
+// --- CHARTING ---
+function initializeCharts() {
+    const chartColors = ['#6366F1', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#3B82F6', '#EC4899'];
+    const pieOptions = { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right' } } };
+    
+    efficiencyChart = new Chart(document.getElementById('efficiencyChart').getContext('2d'), {
+        type: 'bar',
+        data: { labels: ['C-to-A', 'A-to-P', 'L-to-S', 'BC-to-S'], datasets: [{ label: 'Rate (%)', data: [], backgroundColor: chartColors.slice(0, 4) }] },
+        options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y', plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, max: 100 } } }
+    });
+    contactSourcePieChart = new Chart(document.getElementById('contactSourcePieChart').getContext('2d'), { type: 'pie', data: { datasets: [{ data: [], backgroundColor: chartColors }] }, options: pieOptions });
+    listingSourcePieChart = new Chart(document.getElementById('listingSourcePieChart').getContext('2d'), { type: 'pie', data: { datasets: [{ data: [], backgroundColor: chartColors }] }, options: pieOptions });
+    buyerSourcePieChart = new Chart(document.getElementById('buyerSourcePieChart').getContext('2d'), { type: 'pie', data: { datasets: [{ data: [], backgroundColor: chartColors }] }, options: pieOptions });
+    
+    wifChart = new Chart(document.getElementById('wifChart').getContext('2d'), {
+        type: 'doughnut',
+        data: {
+            labels: ['Sales Needed', 'Contacts Needed'],
+            datasets: [{ data: [0, 0], backgroundColor: ['#4f46e5', '#a5b4fc'], borderWidth: 0 }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, cutout: '60%', plugins: { legend: { display: true, position: 'bottom' } } }
+    });
+    
+    monthlyActivityChart = new Chart(document.getElementById('monthlyActivityChart').getContext('2d'), {
+        type: 'line',
+        data: {
+            labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+            datasets: [
+                { label: 'Contacts', data: [], borderColor: '#3B82F6', tension: 0.1 },
+                { label: 'Appointments', data: [], borderColor: '#10B981', tension: 0.1 },
+                { label: 'Listings Taken', data: [], borderColor: '#8B5CF6', tension: 0.1 },
+                { label: 'Sales', data: [], borderColor: '#EF4444', tension: 0.1 }
+            ]
+        },
+        options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } } }
+    });
+
+    expenseSummaryPieChart = new Chart(document.getElementById('expenseSummaryPieChart').getContext('2d'), { type: 'pie', data: { datasets: [{ data: [], backgroundColor: chartColors }] }, options: pieOptions });
+    listingSalesBreakdownChart = new Chart(document.getElementById('listingSalesBreakdownChart').getContext('2d'), { type: 'pie', data: { datasets: [{ data: [], backgroundColor: chartColors.slice(1) }] }, options: pieOptions });
+    buyerSalesBreakdownChart = new Chart(document.getElementById('buyerSalesBreakdownChart').getContext('2d'), { type: 'pie', data: { datasets: [{ data: [], backgroundColor: chartColors.slice(1) }] }, options: pieOptions });
+}
+
+function updateAllCharts(displayEntries, totals) {
+    efficiencyChart.data.datasets[0].data = [
+        totals.contacts > 0 ? (totals.appointments / totals.contacts) * 100 : 0,
+        totals.appointments > 0 ? (totals.presentations / totals.appointments) * 100 : 0,
+        totals.listings > 0 ? (totals.listingsSold / totals.listings) * 100 : 0,
+        totals.buyerContracts > 0 ? (totals.buyersSold / totals.buyerContracts) * 100 : 0
+    ];
+    efficiencyChart.update();
+
+    const updatePie = (chart, data) => {
+        chart.data.labels = Object.keys(data);
+        chart.data.datasets[0].data = Object.values(data);
+        chart.update();
+    };
+
+    const contactsBySource = displayEntries.filter(e => e.eventType === 'Daily Contacts').reduce((acc, rec) => { acc[rec.leadSource] = (acc[rec.leadSource] || 0) + rec.contacts; return acc; }, {});
+    updatePie(contactSourcePieChart, contactsBySource);
+
+    const listingsBySource = displayEntries.filter(e => e.eventType === 'Listing').reduce((acc, rec) => { acc[rec.leadSource] = (acc[rec.leadSource] || 0) + 1; return acc; }, {});
+    updatePie(listingSourcePieChart, listingsBySource);
+
+    const buyersBySource = displayEntries.filter(e => e.eventType === 'Buyer Contract Signed').reduce((acc, rec) => { acc[rec.leadSource] = (acc[rec.leadSource] || 0) + 1; return acc; }, {});
+    updatePie(buyerSourcePieChart, buyersBySource);
+    
+    // Monthly Activity Chart
+    const monthlyData = {
+        contacts: Array(12).fill(0),
+        appointments: Array(12).fill(0),
+        listings: Array(12).fill(0),
+        sales: Array(12).fill(0)
+    };
+    displayEntries.forEach(entry => {
+        const month = new Date(entry.date).getMonth();
+        if (entry.eventType === 'Daily Contacts') monthlyData.contacts[month] += entry.contacts;
+        if (entry.eventType === 'Appointment') monthlyData.appointments[month]++;
+        if (entry.eventType === 'Listing') monthlyData.listings[month]++;
+        if (entry.eventType === 'Sale') monthlyData.sales[month]++;
+    });
+    monthlyActivityChart.data.datasets[0].data = monthlyData.contacts;
+    monthlyActivityChart.data.datasets[1].data = monthlyData.appointments;
+    monthlyActivityChart.data.datasets[2].data = monthlyData.listings;
+    monthlyActivityChart.data.datasets[3].data = monthlyData.sales;
+    monthlyActivityChart.update();
+
+    // Expense Summary Pie Chart
+    const expenseSummaryData = displayEntries.filter(e => e.eventType === 'General Expense').reduce((acc, entry) => {
+        acc[entry.expenseCategory] = (acc[entry.expenseCategory] || 0) + entry.expenseAmount;
+        return acc;
+    }, {});
+    updatePie(expenseSummaryPieChart, expenseSummaryData);
+    
+    // Sales Breakdown Charts
+    const listingBreakdownData = {
+        'Net Income': totals.netIncomeListings,
+        'Broker Split': totals.brokerSplitFromListings,
+        'Broker Fees': totals.brokerFeesFromListings,
+        'Other Expenses': totals.expensesFromListings,
+    };
+    updatePie(listingSalesBreakdownChart, listingBreakdownData);
+
+    const buyerBreakdownData = {
+        'Net Income': totals.netIncomeBuyers,
+        'Broker Split': totals.brokerSplitFromBuyers,
+        'Broker Fees': totals.brokerFeesFromBuyers,
+        'Other Expenses': totals.expensesFromBuyers,
+    };
+    updatePie(buyerSalesBreakdownChart, buyerBreakdownData);
+}
+
+// --- REPORTING ---
+const generateReport = () => {
+    const filteredData = getFilteredEntries();
+    if (filteredData.length === 0) {
+        alert("No data in the selected filter range to generate a report.");
+        return;
+    }
+    const reportWindow = window.open('', '_blank');
+    const efficiencyChartImg = efficiencyChart.toBase64Image();
+    const contactSourcePieChartImg = contactSourcePieChart.toBase64Image();
+    const listingSourcePieChartImg = listingSourcePieChart.toBase64Image();
+    const buyerSourcePieChartImg = buyerSourcePieChart.toBase64Image();
+    const monthlyActivityChartImg = monthlyActivityChart.toBase64Image();
+    const expenseSummaryPieChartImg = expenseSummaryPieChart.toBase64Image();
+    const listingSalesBreakdownChartImg = listingSalesBreakdownChart.toBase64Image();
+    const buyerSalesBreakdownChartImg = buyerSalesBreakdownChart.toBase64Image();
+    
+    let kpiHtml = '';
+    document.getElementById('kpi-grid').querySelectorAll('.bg-white').forEach(card => {
+        kpiHtml += `<div style="border: 1px solid #ddd; border-radius: 8px; padding: 10px; text-align: center; margin: 5px; flex: 1 1 150px;">${card.innerHTML}</div>`;
+    });
+    
+    let logTable = '<table width="100%" border="1" cellpadding="5" cellspacing="0" style="margin-top: 20px;"><thead><tr><th>Date</th><th>Event</th><th>Details</th><th>Notes</th></tr></thead><tbody>';
+    filteredData.forEach(rec => {
+        let detail = rec.leadSource;
+        if(rec.eventType === 'Daily Contacts') detail = `${rec.contacts} contacts from ${rec.leadSource}`;
+        if(rec.eventType === 'Sale') detail = `Type: ${rec.saleType} | Gross: ${formatCurrency(rec.grossCommission)}`;
+        if(rec.eventType === 'General Expense') detail = `Category: ${rec.expenseCategory} | Amount: ${formatCurrency(rec.expenseAmount)}`;
+        logTable += `<tr><td>${rec.date}</td><td>${rec.eventType}</td><td>${detail || ''}</td><td>${rec.notes || ''}</td></tr>`;
+    });
+    logTable += '</tbody></table>';
+
+    reportWindow.document.write(`
+        <html><head><title>Real Estate Performance Report</title>
+        <style>body{font-family:Arial,sans-serif;margin:20px} h1,h2{color:#4f46e5} .kpi-grid{display:flex;flex-wrap:wrap;} .chart-grid{display:grid; grid-template-columns: 1fr 1fr; gap: 20px; page-break-inside: avoid;} img{max-width:100%;}</style></head>
+        <body>
+            <h1>Performance Report</h1><p>Generated: ${new Date().toLocaleDateString()}</p>
+            <h2>Key Performance Indicators <small>${document.getElementById('glance-period').textContent}</small></h2>
+            <div class="kpi-grid">${kpiHtml}</div>
+            <h2 style="margin-top: 40px;">Visual Analytics</h2>
+            <div style="page-break-inside: avoid;"><h3>Monthly Activity Trends</h3><img src="${monthlyActivityChartImg}" style="max-width: 800px;"></div>
+            <div class="chart-grid">
+                <div><h3>Sales Funnel Efficiency</h3><img src="${efficiencyChartImg}"></div>
+                <div><h3>Expense Breakdown</h3><img src="${expenseSummaryPieChartImg}"></div>
+                <div><h3>Contacts by Lead Source</h3><img src="${contactSourcePieChartImg}"></div>
+                <div><h3>Listings by Lead Source</h3><img src="${listingSourcePieChartImg}"></div>
+                <div><h3>Buyer Contracts by Source</h3><img src="${buyerSourcePieChartImg}"></div>
+                <div><h3>Listing Sale Breakdown</h3><img src="${listingSalesBreakdownChartImg}"></div>
+                <div><h3>Buyer Sale Breakdown</h3><img src="${buyerSalesBreakdownChartImg}"></div>
+            </div>
+            <h2 style="margin-top: 40px;">Event Log</h2>
+            ${logTable}
+        </body></html>
+    `);
+    reportWindow.document.close();
+    setTimeout(() => reportWindow.print(), 500);
+};
+
+
+// --- UTILITIES, IMPORT/EXPORT, ETC. ---
+const getFilteredEntries = () => {
+    const startDate = document.getElementById('filterStartDate').value;
+    const endDate = document.getElementById('filterEndDate').value;
+    let filtered = logEntries;
+    if (startDate) filtered = filtered.filter(entry => entry.date >= startDate);
+    if (endDate) filtered = filtered.filter(entry => entry.date <= endDate);
+    document.getElementById('glance-period').textContent = (startDate || endDate) ? `(${startDate || 'Start'} to ${endDate || 'Today'})` : '(All Time)';
+    return filtered;
+};
+const clearFilters = () => {
+    document.getElementById('filterStartDate').value = '';
+    document.getElementById('filterEndDate').value = '';
+    updateAll();
+};
+const formatCurrency = (num) => `$${(num || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+const deleteLogEntry = (id) => { if (confirm('Are you sure you want to delete this log entry?')) { logEntries = logEntries.filter(e => e.id !== id); updateAll(); } };
+const resetAllData = () => { if (confirm('ARE YOU SURE?\nThis will permanently delete ALL log data and goals.')) { logEntries = []; goals = { grossIncome: 0, netIncome: 0, listingsSold: 0, buyersSold: 0, contacts: 0 }; categorizationRules = {}; document.getElementById('goalForm').reset(); clearFilters(); updateAll(); }};
+function renderFullLog() {
+    const container = document.getElementById('fullLogContainer');
+    const sortBy = document.getElementById('sortLogBy').value;
+    let sortedEntries = [...getFilteredEntries()];
+    switch(sortBy) {
+        case 'oldest': sortedEntries.sort((a,b) => new Date(a.date) - new Date(b.date)); break;
+        case 'eventType': sortedEntries.sort((a,b) => a.eventType.localeCompare(b.eventType)); break;
+        case 'amount': sortedEntries.sort((a,b) => (b.grossCommission || b.expenseAmount) - (a.grossCommission || a.expenseAmount)); break;
+        default: sortedEntries.sort((a,b) => new Date(b.date) - new Date(a.date)); break;
+    }
+    container.innerHTML = sortedEntries.length === 0 ? '<p class="text-center text-gray-500 py-8">No log entries found.</p>' : sortedEntries.map(entry => {
+        let details = '';
+        if (entry.eventType === 'Daily Contacts') details = `Logged <strong>${entry.contacts}</strong> contacts from <strong>${entry.leadSource || ''}</strong>.`;
+        else if (entry.eventType === 'Sale') details = `<strong>Gross:</strong> ${formatCurrency(entry.grossCommission)} | <strong>Net:</strong> ${formatCurrency(entry.grossCommission - (entry.grossCommission * (entry.brokerSplit/100)) - entry.brokerFee - entry.expenses)}`;
+        else if (entry.eventType === 'General Expense') details = `<strong>Category:</strong> ${entry.expenseCategory} | <strong>For:</strong> ${entry.expenseFor} | <strong>Amount:</strong> ${formatCurrency(entry.expenseAmount)}`;
+        else details = `Lead Source: <strong>${entry.leadSource || ''}</strong>`;
+        const badgeType = entry.eventType === 'Sale' ? `${entry.eventType} (${entry.saleType})` : entry.eventType;
+        return `<div class="p-4 border rounded-lg bg-gray-50 hover:bg-gray-100"><div class="flex justify-between items-center"><div><span class="font-semibold text-indigo-700">${entry.date}</span><span class="ml-3 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">${badgeType}</span></div><button data-id="${entry.id}" class="delete-btn text-red-500 hover:text-red-700 text-sm">&times; Delete</button></div><p class="mt-2 text-sm text-gray-600">${details}</p>${entry.notes ? `<p class="mt-1 text-sm text-gray-500 italic">Notes: ${entry.notes}</p>` : ''}</div>`;
+    }).join('');
+}
+function renderExpenseSummary() {
+    const container = document.getElementById('expenseSummaryContainer');
+    const expenseEntries = getFilteredEntries().filter(e => e.eventType === 'General Expense');
+    
+    if (expenseEntries.length === 0) {
+        container.innerHTML = '<p class="text-center text-gray-500 py-4">No general expenses logged for this period.</p>';
+        return;
+    }
+
+    const summary = expenseEntries.reduce((acc, entry) => {
+        acc[entry.expenseCategory] = (acc[entry.expenseCategory] || 0) + entry.expenseAmount;
+        return acc;
+    }, {});
+
+    const sortedSummary = Object.entries(summary).sort(([,a],[,b]) => b-a);
+
+    container.innerHTML = `<table class="w-full text-sm"><tbody>` + sortedSummary.map(([category, amount]) => `
+        <tr class="border-b">
+            <td class="py-2 pr-2">${category}</td>
+            <td class="py-2 pl-2 text-right font-semibold">${formatCurrency(amount)}</td>
+        </tr>
+    `).join('') + `</tbody></table>`;
+}
+
+function saveStateToLocalStorage() {
+    try {
+        const state = {
+            logEntries: logEntries,
+            goals: goals,
+            categorizationRules: categorizationRules
+        };
+        localStorage.setItem('realEstateDashboardState_v7', JSON.stringify(state));
+        document.getElementById('saveStatus').textContent = `Last saved: ${new Date().toLocaleTimeString()}`;
+    } catch (e) {
+        console.error("Failed to save data to localStorage:", e);
+        document.getElementById('saveStatus').textContent = 'Error: Could not save data. Your browser might be in private mode or storage is full.';
+    }
+}
+
+const exportCSV = () => {
+    if (logEntries.length === 0) {
+        alert("No data to export.");
+        return;
+    }
+    const headers = ['id', 'date', 'eventType', 'leadSource', 'notes', 'contacts', 'homeValue', 'commissionRate', 'grossCommission', 'expenses', 'saleType', 'brokerSplit', 'brokerFee', 'expenseCategory', 'expenseAmount', 'expenseFor'];
+    const logRows = logEntries.map(rec => headers.map(h => {
+        const value = rec[h];
+        const strValue = (value === undefined || value === null) ? '' : String(value);
+        return `"${strValue.replace(/"/g, '""')}"`;
+    }).join(','));
+
+    // Create a special row for goals
+    const goalsRow = `GOALS,"${JSON.stringify(goals).replace(/"/g, '""')}"`;
+
+    const csvContent = [goalsRow, headers.join(','), ...logRows].join('\n');
+    
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = "real_estate_dashboard_backup.csv";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+};
+
+const importCSV = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.csv';
+    input.onchange = e => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = readerEvent => {
+            const content = readerEvent.target.result;
+            const rows = content.split('\n').filter(row => row.trim() !== ''); // Filter out empty rows
+            if (rows.length === 0) {
+                alert("CSV file is empty or invalid.");
+                return;
+            }
+
+            // Check if this is a backup file or a bank statement
+            if (rows[0].startsWith('GOALS,')) {
+                // This is a backup file, overwrite data
+                handleBackupImport(rows);
+            } else {
+                // This is a bank statement, parse and review
+                handleMastercardImport(rows);
+            }
+        };
+        reader.readAsText(file);
+    };
+    input.click();
+};
+
+function handleBackupImport(rows) {
+    let importedGoals = null;
+    let logDataStartIndex = 0;
+    let headers = [];
+
+    try {
+        const goalsJSONString = rows[0].substring(6).replace(/^"|"$/g, '').replace(/""/g, '"');
+        importedGoals = JSON.parse(goalsJSONString);
+        headers = rows[1].trim().split(',').map(h => h.replace(/"/g, ''));
+        logDataStartIndex = 2;
+    } catch (err) {
+        alert("Could not parse backup file. File may be corrupt.");
+        console.error("Error parsing backup JSON:", err);
+        return;
+    }
+    
+    const importedLogs = rows.slice(logDataStartIndex).map(row => {
+        if (!row.trim()) return null;
+        const values = row.match(/(?<=,|^)(?:"(?:[^"]|"")*"|[^,]*)(?=,|$)/g) || [];
+        const entry = {};
+        headers.forEach((header, i) => {
+            const value = (values[i] || '').replace(/^"|"$/g, '').replace(/""/g, '"');
+            const numFields = ['id', 'contacts', 'homeValue', 'commissionRate', 'grossCommission', 'expenses', 'brokerSplit', 'brokerFee', 'expenseAmount'];
+            entry[header] = numFields.includes(header) ? parseFloat(value) || 0 : (value === 'null' ? null : value);
+        });
+        return entry;
+    }).filter(Boolean);
+
+    if (confirm(`Found ${importedLogs.length} log entries and goal data. This will OVERWRITE your current data. Continue?`)) {
+        logEntries = importedLogs;
+        goals = importedGoals;
+        updateAll();
+        alert('Backup restored successfully!');
+    }
+}
+
+function handleMastercardImport(rows) {
+    function categorize(description) {
+        const upperDesc = description.toUpperCase();
+        // Check learned rules first
+        if (categorizationRules[upperDesc]) {
+            return categorizationRules[upperDesc];
+        }
+        return 'Other'; // Default category if no rule exists
+    }
+
+    temporaryImportedExpenses = rows.map(row => {
+        const columns = row.split(',');
+        if (columns.length < 5) return null; // Ensure row has enough columns
+        
+        const date = columns[0];
+        const description = columns[1];
+        const amount = parseFloat(columns[4]) || 0; // Debit column
+
+        if (!date || !description || !amount) {
+            return null;
+        }
+
+        return {
+            date: date,
+            notes: description,
+            expenseAmount: amount,
+            expenseCategory: categorize(description),
+            expenseFor: 'general',
+            eventType: 'General Expense',
+            id: Date.now() + Math.random()
+        };
+    }).filter(Boolean);
+
+    const reviewBody = document.getElementById('importReviewTableBody');
+    reviewBody.innerHTML = ''; // Clear previous review
+    
+    const categoryOptionsHTML = Array.from(document.getElementById('expenseCategory').options).map(opt => `<option value="${opt.value}">${opt.text}</option>`).join('');
+
+    temporaryImportedExpenses.forEach((item, index) => {
+        const row = document.createElement('tr');
+        row.dataset.index = index;
+        row.innerHTML = `
+            <td class="px-4 py-2 whitespace-nowrap">${item.date}</td>
+            <td class="px-4 py-2">${item.notes}</td>
+            <td class="px-4 py-2">${formatCurrency(item.expenseAmount)}</td>
+            <td class="px-4 py-2">
+                <select class="category-select mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2">
+                    ${categoryOptionsHTML}
+                </select>
+            </td>
+            <td class="px-4 py-2">
+                <select class="for-select mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2">
+                    <option value="general">General</option>
+                    <option value="listing">Listing</option>
+                    <option value="buyer">Buyer</option>
+                </select>
+            </td>
+            <td class="px-4 py-2 text-center">
+                <input type="checkbox" class="remember-rule-checkbox h-4 w-4 text-indigo-600 border-gray-300 rounded">
+            </td>
+            <td class="px-4 py-2">
+                <button class="delete-import-row text-red-500 hover:text-red-700">&times; Discard</button>
+            </td>
+        `;
+        row.querySelector('.category-select').value = item.expenseCategory;
+        reviewBody.appendChild(row);
+    });
+
+    openImportReviewModal();
+}
+
+function confirmImport() {
+    const reviewRows = document.getElementById('importReviewTableBody').querySelectorAll('tr');
+    const newEntries = [];
+    reviewRows.forEach(row => {
+        const index = parseInt(row.dataset.index);
+        const originalEntry = temporaryImportedExpenses[index];
+        
+        const newEntry = { ...originalEntry };
+        newEntry.expenseCategory = row.querySelector('.category-select').value;
+        newEntry.expenseFor = row.querySelector('.for-select').value;
+        
+        if(row.querySelector('.remember-rule-checkbox').checked) {
+            categorizationRules[originalEntry.notes.toUpperCase()] = newEntry.expenseCategory;
+        }
+
+        newEntries.push(newEntry);
+    });
+
+    if (confirm(`This will ADD ${newEntries.length} new expense entries to your log. Continue?`)) {
+        logEntries.push(...newEntries);
+        updateAll();
+        closeImportReviewModal();
+        alert('Expenses added successfully!');
+    }
+}
+
+function populateExpenseDropdown() {
+    const categories = [
+        "Alcohol", "Auto & Travel", "Auto Maintenance & Repair", "Brokerage Fees", "Car Insurance",
+        "Cell Phone", "Client Gifts", "Clothing", "Dining Out", "Education & Coaching", "Entertainment",
+        "Gasoline", "Groceries", "Home Insurance", "Hotels", "Household", "Hydro-Electric Utility", "Internet",
+        "Marketing & Advertising", "MLS & Board Fees", "Monthly Brokerage Fee",
+        "Natural Gas", "Office Supplies & Equipment", "Other", "Property Taxes",
+        "REAL ESTATE ASSOCIATION FEES", "Tax Preparation", "Technology & Software", "Tolls", "Travel Insurance", "Vacation",
+        "Website Maintenance"
+    ].sort();
+    
+    const selectElement = document.getElementById('expenseCategory');
+    selectElement.innerHTML = categories.map(cat => `<option value="${cat}">${cat}</option>`).join('');
+}
+</script>
+
+</body>
+</html>

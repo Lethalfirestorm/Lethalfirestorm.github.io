@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vacation Expense Tracker</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            background-color: #f4f4f4;
+            color: #333;
+        }
+
+        h1 {
+            text-align: center;
+            color: #FF5733;
+            padding-top: 20px;
+        }
+
+        .container {
+            width: 80%;
+            margin: 0 auto;
+        }
+
+        form {
+            background-color: #fff;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .input-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .input-row label {
+            width: 120px;
+            font-weight: bold;
+            display: inline-block;
+        }
+
+        .input-row input,
+        .input-row select {
+            flex: 1;
+            padding: 8px;
+            border-radius: 6px;
+            border: 1px solid #ddd;
+            font-size: 14px;
+        }
+
+        .input-row input[type="date"],
+        .input-row input[type="number"],
+        .input-row select {
+            width: 100%;
+        }
+
+        form button {
+            background-color: #FF5733;
+            color: white;
+            cursor: pointer;
+            padding: 12px;
+            font-size: 16px;
+            border: none;
+            border-radius: 6px;
+            width: 100%;
+        }
+
+        form button:hover {
+            background-color: #C70039;
+        }
+
+        table {
+            width: 100%;
+            margin-top: 20px;
+            border-collapse: collapse;
+            background-color: #fff;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        th, td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        th {
+            background-color: #FF5733;
+            color: white;
+        }
+
+        td button {
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+
+        td button:hover {
+            background-color: #c82333;
+        }
+
+        .totals-container, .summary-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .total-card, .summary-card {
+            flex: 1;
+            min-width: 180px;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            color: white;
+            font-weight: bold;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Updated darker background colors for category totals */
+        .total-card.alcohol { background-color: #C74D4D; } /* Darker Red */
+        .total-card.beer { background-color: #3C8DBC; } /* Darker Blue */
+        .total-card.camping { background-color: #006400; } /* Dark Green */
+        .total-card.clothing { background-color: #D65F6F; } /* Darker Pink */
+        .total-card.cruise { background-color: #B8860B; } /* Dark Gold */
+        .total-card.entertainment { background-color: #B0C4DE; } /* Darker Grey */
+        .total-card.gasoline { background-color: #2E8B57; } /* Sea Green */
+        .total-card.groceries { background-color: #FF4500; } /* Dark Orange */
+        .total-card.hotels { background-color: #D8BFD8; } /* Thistle */
+        .total-card.parking { background-color: #DC143C; } /* Crimson */
+        .total-card.restaurants { background-color: #4B0082; } /* Indigo */
+        .total-card.tolls { background-color: #FF6347; } /* Tomato */
+        .total-card.carRepair { background-color: #8B4513; } /* Saddle Brown */
+        .total-card.miscellaneous { background-color: #20B2AA; } /* Light Sea Green */
+
+        .summary-card#totalDistance { background-color: #1E90FF; } /* Blue */
+        .summary-card#totalFuelUsed { background-color: #FF6347; } /* Red */
+        .summary-card#averageMPG { background-color: #800080; } /* Purple */
+        .summary-card#grandTotal { background-color: #28a745; } /* Green */
+        .summary-card#averagePerDay { background-color: #20c997; } /* Teal */
+
+        /* Light text for summary cards */
+        .summary-card p {
+            font-size: 14px;
+            color: #ddd;
+            margin-top: 10px;
+        }
+
+        .chart-container {
+            width: 100%;
+            max-width: 600px;
+            margin: 20px auto;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Vacation Expense Tracker</h1>
+
+        <form id="expenseForm">
+            <div class="input-row">
+                <label for="category">Category:</label>
+                <select id="category">
+                    <option value="Alcohol">Alcohol</option>
+                    <option value="Beer">Beer</option>
+                    <option value="Camping">Camping</option>
+                    <option value="Clothing">Clothing</option>
+                    <option value="Cruise">Cruise</option>
+                    <option value="Entertainment">Entertainment</option>
+                    <option value="Gasoline">Gasoline</option>
+                    <option value="Groceries">Groceries</option>
+                    <option value="Hotels">Hotels</option>
+                    <option value="Parking">Parking</option>
+                    <option value="Restaurants">Restaurants</option>
+                    <option value="Tolls">Tolls</option>
+                    <option value="Car Repair">Car Repair</option>
+                    <option value="Miscellaneous">Miscellaneous</option>
+                </select>
+
+                <label for="description">Description:</label>
+                <input type="text" id="description" required>
+
+                <label for="amount">Amount:</label>
+                <input type="number" id="amount" step="0.01" required>
+
+                <label for="date">Date:</label>
+                <input type="date" id="date" required>
+            </div>
+
+            <div class="input-row">
+                <label for="odometer">Odometer (km):</label>
+                <input type="number" id="odometer" step="0.1">
+
+                <label for="fuelGallons">Fuel (Gallons):</label>
+                <input type="number" id="fuelGallons" step="0.1" placeholder="Leave empty if liters">
+
+                <label for="fuelLiters">Fuel (Liters):</label>
+                <input type="number" id="fuelLiters" step="0.1" placeholder="Leave empty if gallons">
+            </div>
+
+            <button type="submit">Add Expense</button>
+        </form>
+
+        <table id="expenseTable">
+            <thead>
+                <tr>
+                    <th>Category</th>
+                    <th>Description</th>
+                    <th>Amount</th>
+                    <th>Date</th>
+                    <th>Miles</th>
+                    <th>Fuel Used</th>
+                    <th>MPG</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+
+        <div class="totals-container" id="totalsContainer"></div>
+
+        <div class="summary-container">
+            <div class="summary-card" id="totalDistance">
+                <h4>Total km Driven</h4>
+                <p>Total kilometers driven during the trip.</p>
+                <p id="totalDistance">0.00 km</p>
+            </div>
+            <div class="summary-card" id="totalMilesDriven" style="background-color: darkred;">
+    <h4>Total Miles Driven</h4>
+    <p>Total miles driven during the trip.</p>
+    <p id="totalMilesDriven">0.00 Miles</p>
+</div>
+
+            <div class="summary-card" id="totalFuelUsed">
+                <h4>Total Fuel Used</h4>
+                <p>Total fuel used during the trip (in gallons).</p>
+                <p id="totalFuelUsed">0.00 Gallons</p>
+            </div>
+            <div class="summary-card" id="averageMPG">
+                <h4>Average MPG</h4>
+                <p>Fuel efficiency based on total distance and fuel used.</p>
+                <p id="averageMPG">0.00 MPG</p>
+            </div>
+            <div class="summary-card" id="grandTotal">
+                <h4>Grand Total</h4>
+                <p>Total spending so far.</p>
+                <p id="grandTotal">$0.00</p>
+            </div>
+            <div class="summary-card" id="averagePerDay">
+                <h4>Average Per Day</h4>
+                <p>Average cost per day based on recorded expenses.</p>
+                <p id="averagePerDay">$0.00</p>
+            </div>
+        </div>
+
+        <div class="chart-container">
+            <canvas id="expenseChart"></canvas>
+        </div>
+    </div>
+
+    <script>
+        const expenseForm = document.getElementById('expenseForm');
+        const expenseTable = document.getElementById('expenseTable').getElementsByTagName('tbody')[0];
+        const totalsContainer = document.getElementById('totalsContainer');
+        const grandTotalElem = document.getElementById('grandTotal');
+        const averagePerDayElem = document.getElementById('averagePerDay');
+        const totalDistanceElem = document.getElementById('totalDistance');
+        const totalMilesDrivenElem = document.getElementById('totalMilesDriven');
+        const totalFuelUsedElem = document.getElementById('totalFuelUsed');
+        const averageMPGElem = document.getElementById('averageMPG');
+        const expenseChart = document.getElementById('expenseChart');
+
+        let expenses = [];
+        let uniqueDates = new Set();
+        let totals = {};
+        let chartInstance;
+
+        expenseForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+
+            const category = document.getElementById('category').value;
+            const description = document.getElementById('description').value;
+            const amount = parseFloat(document.getElementById('amount').value) || 0;
+            const date = document.getElementById('date').value;
+            const odometer = parseFloat(document.getElementById('odometer').value) || 0;
+            const fuelGallons = parseFloat(document.getElementById('fuelGallons').value) || 0;
+            const fuelLiters = parseFloat(document.getElementById('fuelLiters').value) || 0;
+
+            uniqueDates.add(date);
+
+            // Convert fuel to gallons
+            const fuelInGallons = fuelGallons > 0 ? fuelGallons : fuelLiters / 3.78541;
+
+            // Convert odometer to miles and kilometers
+            const miles = odometer * 0.621371;
+            const kilometers = odometer;
+
+            // Calculate MPG (Miles per gallon)
+            const mpg = fuelInGallons > 0 ? miles / fuelInGallons : 0;
+
+            const expense = { category, description, amount, date, miles, kilometers, fuelInGallons, mpg };
+            expenses.push(expense);
+
+            updateTable();
+            updateTotals();
+            updateGrandTotal();
+            updateAveragePerDay();
+            updateDistanceAndFuelStats();
+            updateChart();
+        });
+
+        function updateTable() {
+            expenseTable.innerHTML = '';
+            expenses.forEach((expense, index) => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${expense.category}</td>
+                    <td>${expense.description}</td>
+                    <td>$${expense.amount.toFixed(2)}</td>
+                    <td>${expense.date}</td>
+                    <td>${expense.miles.toFixed(2)}</td>
+                    <td>${expense.fuelInGallons.toFixed(2)} Gallons</td>
+                    <td>${expense.mpg.toFixed(2)}</td>
+                    <td><button onclick="deleteExpense(${index})">Delete</button></td>
+                `;
+                expenseTable.appendChild(row);
+            });
+        }
+
+        function updateTotals() {
+            totals = {};
+            expenses.forEach(expense => {
+                if (!totals[expense.category]) {
+                    totals[expense.category] = 0;
+                }
+                totals[expense.category] += expense.amount;
+            });
+
+            totalsContainer.innerHTML = '';
+            for (const [category, total] of Object.entries(totals)) {
+                const card = document.createElement('div');
+                card.classList.add('total-card');
+                card.classList.add(category.toLowerCase());
+                card.innerHTML = `
+                    <h4>${category}</h4>
+                    <p>$${total.toFixed(2)}</p>
+                `;
+                totalsContainer.appendChild(card);
+            }
+        }
+
+        function updateGrandTotal() {
+            const grandTotal = expenses.reduce((sum, expense) => sum + expense.amount, 0);
+            grandTotalElem.textContent = `$${grandTotal.toFixed(2)}`;
+        }
+
+        function updateAveragePerDay() {
+            const totalDays = uniqueDates.size;
+            if (totalDays === 0) {
+                averagePerDayElem.textContent = "$0.00";
+                return;
+            }
+
+            const grandTotal = expenses.reduce((sum, expense) => sum + expense.amount, 0);
+            const averagePerDay = grandTotal / totalDays;
+            averagePerDayElem.textContent = `$${averagePerDay.toFixed(2)}`;
+        }
+
+        function updateDistanceAndFuelStats() {
+            const totalMiles = expenses.reduce((sum, expense) => sum + expense.miles, 0);
+            const totalKilometers = expenses.reduce((sum, expense) => sum + expense.kilometers, 0);
+            const totalFuel = expenses.reduce((sum, expense) => sum + expense.fuelInGallons, 0);
+            const averageMPG = totalFuel > 0 ? totalMiles / totalFuel : 0;
+
+            totalDistanceElem.textContent = `${totalKilometers.toFixed(2)} km`;
+            totalMilesDrivenElem.textContent = `${totalMiles.toFixed(2)} Miles`;
+            totalFuelUsedElem.textContent = `${totalFuel.toFixed(2)} Gallons`;
+            averageMPGElem.textContent = `${averageMPG.toFixed(2)} MPG`;
+        }
+
+        function deleteExpense(index) {
+            expenses.splice(index, 1);
+            updateTable();
+            updateTotals();
+            updateGrandTotal();
+            updateAveragePerDay();
+            updateDistanceAndFuelStats();
+            updateChart();
+        }
+
+        function updateChart() {
+            const categories = Object.keys(totals);
+            const amounts = Object.values(totals);
+
+            const categoryColors = [
+                '#C74D4D', '#3C8DBC', '#006400', '#D65F6F', '#B8860B',
+                '#B0C4DE', '#2E8B57', '#FF4500', '#D8BFD8', '#DC143C',
+                '#4B0082', '#FF6347', '#8B4513', '#20B2AA'
+            ];
+
+            if (chartInstance) {
+                chartInstance.data.labels = categories;
+                chartInstance.data.datasets[0].data = amounts;
+                chartInstance.data.datasets[0].backgroundColor = categoryColors.slice(0, categories.length);
+                chartInstance.update();
+            } else {
+                chartInstance = new Chart(expenseChart, {
+                    type: 'pie',
+                    data: {
+                        labels: categories,
+                        datasets: [{
+                            data: amounts,
+                            backgroundColor: categoryColors.slice(0, categories.length),
+                        }],
+                    },
+                    options: {
+                        responsive: true,
+                    }
+                });
+            }
+        }
+    </script>
+</body>
+</html>
+<div class="container">
+    <h1>Vacation Expense Tracker</h1>
+
+    <!-- Import and Export Buttons -->
+    <div style="margin-bottom: 20px; text-align: center;">
+        <button onclick="exportData()">Export to JSON</button>
+        <input type="file" id="importFile" accept=".json" style="display: none;" onchange="importData(event)">
+        <button onclick="document.getElementById('importFile').click()">Import from JSON</button>
+    </div>
+
+    <form id="expenseForm">
+        <!-- Form content remains unchanged -->
+    </form>
+
+    <!-- Table and other content remains unchanged -->
+
+    <script>
+        // JavaScript code remains largely unchanged, except for the new functions:
+
+        // Function to export data to a JSON file
+        function exportData() {
+            const jsonData = JSON.stringify(expenses, null, 2);
+            const blob = new Blob([jsonData], { type: "application/json" });
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.download = "expenses.json";
+            link.click();
+        }
+
+        // Function to import data from a JSON file
+        function importData(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    try {
+                        const importedData = JSON.parse(e.target.result);
+                        if (Array.isArray(importedData)) {
+                            expenses = importedData;
+                            updateTable();
+                            updateTotals();
+                            updateGrandTotal();
+                            updateAveragePerDay();
+                            updateDistanceAndFuelStats();
+                            updateChart();
+                        } else {
+                            alert("Invalid file format. Please upload a valid JSON file.");
+                        }
+                    } catch (error) {
+                        alert("Error parsing JSON. Please upload a valid file.");
+                    }
+                };
+                reader.readAsText(file);
+            }
+        }
+    </script>
+</div>

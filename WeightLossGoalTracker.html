@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weight Loss Tracker</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f8ff;
+            color: #333;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 700px;
+            margin: 50px auto;
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+        }
+        h1 {
+            text-align: center;
+            color: #0078d7;
+        }
+        label {
+            font-weight: bold;
+        }
+        input, button {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        button {
+            background-color: #0078d7;
+            color: white;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #005bb5;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #ccc;
+            padding: 10px;
+            text-align: center;
+        }
+        th {
+            background-color: #0078d7;
+            color: white;
+        }
+        .export-btn {
+            margin-top: 20px;
+            background-color: #28a745;
+        }
+        .export-btn:hover {
+            background-color: #218838;
+        }
+        .chart-container {
+            margin-top: 40px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Weight Loss Tracker</h1>
+        <form id="weightLossForm">
+            <label for="today">Today's Date:</label>
+            <input type="date" id="today" required>
+
+            <label for="targetDate">Target Date:</label>
+            <input type="date" id="targetDate" required>
+
+            <label for="goalWeight">Goal Weight (lbs):</label>
+            <input type="number" id="goalWeight" step="0.1" required>
+
+            <label for="currentWeight">Current Weight (lbs):</label>
+            <input type="number" id="currentWeight" step="0.1" required>
+
+            <button type="button" onclick="calculateScenarios()">Calculate</button>
+            <button type="button" class="export-btn" onclick="exportToCSV()">Export to CSV</button>
+        </form>
+
+        <div id="results"></div>
+
+        <div class="chart-container">
+            <canvas id="weightLossChart"></canvas>
+        </div>
+    </div>
+
+    <script>
+        function calculateScenarios() {
+            const today = new Date(document.getElementById('today').value);
+            const targetDate = new Date(document.getElementById('targetDate').value);
+            const goalWeight = parseFloat(document.getElementById('goalWeight').value);
+            const currentWeight = parseFloat(document.getElementById('currentWeight').value);
+
+            const daysUntilTarget = Math.ceil((targetDate - today) / (1000 * 60 * 60 * 24));
+            const totalWeightLoss = currentWeight - goalWeight;
+            const dailyWeightLoss = totalWeightLoss / daysUntilTarget;
+
+            const realisticDays = Math.ceil(totalWeightLoss / 0.333);
+            const realisticTargetDate = new Date(today.getTime() + realisticDays * 24 * 60 * 60 * 1000);
+
+            let resultsHTML = `<h2>Results</h2>`;
+
+            // Scenario 1
+            resultsHTML += `<h3>Scenario 1: Target Date</h3>`;
+            resultsHTML += `<p>Days Until Target: ${daysUntilTarget}</p>`;
+            resultsHTML += `<p>Required Daily Weight Loss: ${dailyWeightLoss.toFixed(3)} lbs/day</p>`;
+            resultsHTML += `<p>Target Weight: ${goalWeight} lbs</p>`;
+
+            // Scenario 2
+            resultsHTML += `<h3>Scenario 2: Realistic Target Date</h3>`;
+            resultsHTML += `<p>Realistic Target Date: ${realisticTargetDate.toDateString()}</p>`;
+            resultsHTML += `<p>Days to Reach Goal: ${realisticDays}</p>`;
+            resultsHTML += `<p>Daily Weight Loss: 0.333 lbs/day</p>`;
+            resultsHTML += `<p>Target Weight: ${goalWeight} lbs</p>`;
+
+            // Scenario 3
+            resultsHTML += `<h3>Scenario 3: Daily Progress</h3>`;
+            resultsHTML += `<table>`;
+            resultsHTML += `<tr><th>Date</th><th>Weight (lbs)</th></tr>`;
+
+            let currentDate = new Date(today);
+            let currentWeightForTarget = currentWeight;
+            let currentWeightForRealistic = currentWeight;
+
+            const dates = [];
+            const weightsScenario1 = [];
+            const weightsScenario2 = [];
+
+            for (let i = 0; i < Math.max(daysUntilTarget, realisticDays); i++) {
+                if (i < daysUntilTarget) {
+                    resultsHTML += `<tr><td>${currentDate.toDateString()}</td><td>${currentWeightForTarget.toFixed(1)} (Scenario 1)</td></tr>`;
+                    weightsScenario1.push(currentWeightForTarget.toFixed(1));
+                    currentWeightForTarget -= dailyWeightLoss;
+                }
+                if (i < realisticDays) {
+                    resultsHTML += `<tr><td>${currentDate.toDateString()}</td><td>${currentWeightForRealistic.toFixed(1)} (Scenario 2)</td></tr>`;
+                    weightsScenario2.push(currentWeightForRealistic.toFixed(1));
+                    currentWeightForRealistic -= 0.333;
+                }
+                dates.push(currentDate.toDateString());
+                currentDate.setDate(currentDate.getDate() + 1);
+            }
+
+            resultsHTML += `</table>`;
+
+            // Total Weight Lost
+            resultsHTML += `<h3>Total Weight Loss</h3>`;
+            resultsHTML += `<p>Total Weight to Lose: ${totalWeightLoss.toFixed(1)} lbs</p>`;
+
+            document.getElementById('results').innerHTML = resultsHTML;
+
+            // Generate Graph
+            generateGraph(dates, weightsScenario1, weightsScenario2);
+        }
+
+        function generateGraph(dates, weightsScenario1, weightsScenario2) {
+            const ctx = document.getElementById('weightLossChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: dates,
+                    datasets: [
+                        {
+                            label: 'Scenario 1: Target Date',
+                            data: weightsScenario1,
+                            backgroundColor: 'rgba(75, 192, 192, 0.6)',
+                            borderColor: 'rgba(75, 192, 192, 1)',
+                            borderWidth: 1
+                        },
+                        {
+                            label: 'Scenario 2: Realistic Date',
+                            data: weightsScenario2,
+                            backgroundColor: 'rgba(255, 99, 132, 0.6)',
+                            borderColor: 'rgba(255, 99, 132, 1)',
+                            borderWidth: 1
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(tooltipItem) {
+                                    return `${tooltipItem.dataset.label}: ${tooltipItem.raw} lbs`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Dates'
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Weight (lbs)'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function exportToCSV() {
+            const today = document.getElementById('today').value;
+            const targetDate = document.getElementById('targetDate').value;
+            const goalWeight = document.getElementById('goalWeight').value;
+            const currentWeight = document.getElementById('currentWeight').value;
+
+            const csvContent = `data:text/csv;charset=utf-8,` +
+                `Today's Date,Target Date,Goal Weight,Current Weight\n` +
+                `${today},${targetDate},${goalWeight},${currentWeight}`;
+
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", "weight_loss_data.csv");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+    </script>
+</body>
+</html>

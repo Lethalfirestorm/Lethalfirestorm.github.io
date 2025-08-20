@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ken Morgan's Travel Log for Business</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #ecf0f1;
+            margin: 0;
+            padding: 20px;
+            color: #2c3e50;
+        }
+        h1 {
+            color: #2980b9;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            font-size: 16px;
+            display: block;
+            margin-bottom: 5px;
+        }
+        input[type="text"], select, textarea, input[type="date"] {
+            width: 100%;
+            padding: 12px;
+            margin-top: 5px;
+            border: 1px solid #bdc3c7;
+            border-radius: 4px;
+            background-color: #ffffff;
+            color: #2c3e50;
+        }
+        textarea {
+            resize: vertical;
+            height: 100px;
+        }
+        button {
+            background-color: #2980b9;
+            color: white;
+            padding: 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            width: 100%;
+            font-size: 16px;
+            margin-top: 10px;
+        }
+        button:hover {
+            background-color: #3498db;
+        }
+        .entry-list {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #f9f9f9;
+            border-radius: 4px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+        }
+        .entry {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            padding: 10px;
+            border-radius: 4px;
+            background-color: #ffffff;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+        .entry:nth-child(odd) {
+            background-color: #ecf0f1;
+        }
+        .entry p {
+            margin: 0;
+        }
+        .entry button {
+            background-color: #e74c3c;
+            padding: 6px 10px;
+            font-size: 14px;
+            cursor: pointer;
+            border-radius: 4px;
+            color: white;
+            width: auto;
+        }
+        .entry button:hover {
+            background-color: #c0392b;
+        }
+        .total {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #1abc9c;
+            border-radius: 4px;
+            text-align: center;
+            font-weight: bold;
+        }
+        .chart-container {
+            width: 70%;
+            height: 400px;
+            margin: 40px auto 20px;
+            display: block;
+        }
+        .buttons {
+            display: flex;
+            justify-content: space-between;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Ken Morgan's Travel Log for Business</h1>
+
+    <div class="container">
+        <form id="travelLogForm">
+            <div class="form-group">
+                <label for="date">Date:</label>
+                <input type="date" id="date" name="date" required>
+            </div>
+
+            <div class="form-group">
+                <label for="description">Description:</label>
+                <input type="text" id="description" name="description" placeholder="Brief description of the journey" required>
+            </div>
+
+            <div class="form-group">
+                <label for="purpose">Purpose:</label>
+                <select id="purpose" name="purpose" required>
+                    <option value="showing houses">Showing Houses</option>
+                    <option value="listing appointment">Listing Appointment</option>
+                    <option value="client meeting">Client Meeting</option>
+                    <option value="property inspection">Property Inspection</option>
+                    <option value="other">Other</option>
+                    <option value="continuing education or training">Continuing Education or Training</option>
+                    <option value="marketing or network events">Marketing or Network Events</option>
+                    <option value="office commute">Office Commute</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="startingOdometer">Starting Odometer Reading:</label>
+                <input type="text" id="startingOdometer" name="startingOdometer" placeholder="Starting Odometer" required>
+            </div>
+
+            <div class="form-group">
+                <label for="endingOdometer">Ending Odometer Reading:</label>
+                <input type="text" id="endingOdometer" name="endingOdometer" placeholder="Ending Odometer" required>
+            </div>
+
+            <div class="form-group">
+                <label for="notes">Notes:</label>
+                <textarea id="notes" name="notes" placeholder="Additional notes or details"></textarea>
+            </div>
+
+            <button type="submit">Add Entry</button>
+        </form>
+
+        <div class="entry-list" id="entryList"></div>
+
+        <div class="total">
+            <p>Total Distance Traveled: <span id="totalDistance">0</span> miles</p>
+        </div>
+
+        <div class="chart-container">
+            <canvas id="purposeChart"></canvas>
+        </div>
+
+        <div class="buttons">
+            <button onclick="exportData()">Export Data</button>
+            <button onclick="importData()">Import Data</button>
+        </div>
+    </div>
+
+    <script>
+        // Set up data storage in localStorage
+        let travelData = JSON.parse(localStorage.getItem('travelData')) || [];
+
+        // Update total distance and purpose data
+        function updateTotals() {
+            const totalDistance = travelData.reduce((sum, entry) => sum + (entry.endingOdometer - entry.startingOdometer), 0);
+            document.getElementById('totalDistance').textContent = totalDistance.toFixed(2);
+
+            const purposeTotals = {
+                'showing houses': 0,
+                'listing appointment': 0,
+                'client meeting': 0,
+                'property inspection': 0,
+                'other': 0,
+                'continuing education or training': 0,
+                'marketing or network events': 0,
+                'office commute': 0
+            };
+
+            travelData.forEach(entry => {
+                purposeTotals[entry.purpose] += (entry.endingOdometer - entry.startingOdometer);
+            });
+
+            updatePieChart(purposeTotals);
+            renderEntries();
+        }
+
+        // Create pie chart to show purpose breakdown
+        let purposeChart;
+        function updatePieChart(purposeTotals) {
+            const ctx = document.getElementById('purposeChart').getContext('2d');
+            if (purposeChart) {
+                purposeChart.destroy();
+            }
+
+            purposeChart = new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: Object.keys(purposeTotals),
+                    datasets: [{
+                        data: Object.values(purposeTotals),
+                        backgroundColor: ['#3498db', '#e74c3c', '#2ecc71', '#f39c12', '#9b59b6', '#16a085', '#f1c40f', '#34495e'],
+                        borderColor: '#ecf0f1',
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(tooltipItem) {
+                                    const purpose = tooltipItem.label;
+                                    const value = tooltipItem.raw;
+                                    return `${purpose}: ${value.toFixed(2)} miles`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Handle form submission
+        document.getElementById('travelLogForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+
+            const newEntry = {
+                date: document.getElementById('date').value,
+                description: document.getElementById('description').value,
+                purpose: document.getElementById('purpose').value,
+                startingOdometer: parseFloat(document.getElementById('startingOdometer').value),
+                endingOdometer: parseFloat(document.getElementById('endingOdometer').value),
+                notes: document.getElementById('notes').value
+            };
+
+            if (!isNaN(newEntry.startingOdometer) && !isNaN(newEntry.endingOdometer)) {
+                travelData.push(newEntry);
+                localStorage.setItem('travelData', JSON.stringify(travelData));
+                updateTotals();
+            } else {
+                alert('Please enter valid odometer readings.');
+            }
+
+            // Reset the form after submission
+            document.getElementById('travelLogForm').reset();
+        });
+
+        // Render all entries
+        function renderEntries() {
+            const entryList = document.getElementById('entryList');
+            entryList.innerHTML = '';
+            travelData.forEach((entry, index) => {
+                const entryElement = document.createElement('div');
+                entryElement.className = 'entry';
+                entryElement.innerHTML = `
+                    <div>
+                        <p><strong>Date:</strong> ${entry.date}</p>
+                        <p><strong>Description:</strong> ${entry.description}</p>
+                        <p><strong>Purpose:</strong> ${entry.purpose}</p>
+                        <p><strong>Distance:</strong> ${(entry.endingOdometer - entry.startingOdometer).toFixed(2)} miles</p>
+                        <p><strong>Odometer Readings:</strong> ${entry.startingOdometer} - ${entry.endingOdometer}</p>
+                        <p><strong>Notes:</strong> ${entry.notes}</p>
+                    </div>
+                    <button onclick="deleteEntry(${index})">Delete</button>
+                `;
+                entryList.appendChild(entryElement);
+            });
+        }
+
+        // Delete an entry
+        function deleteEntry(index) {
+            travelData.splice(index, 1);
+            localStorage.setItem('travelData', JSON.stringify(travelData));
+            updateTotals();
+        }
+
+        // Initialize app on load
+        window.onload = function() {
+            renderEntries();
+            updateTotals();
+        };
+
+        // Export and Import Data (dummy functions)
+        function exportData() {
+            const dataStr = JSON.stringify(travelData);
+            const blob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'travelData.json';
+            a.click();
+        }
+
+        function importData() {
+            const fileInput = document.createElement('input');
+            fileInput.type = 'file';
+            fileInput.accept = '.json';
+            fileInput.onchange = function(event) {
+                const file = event.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        const importedData = JSON.parse(e.target.result);
+                        travelData = importedData;
+                        localStorage.setItem('travelData', JSON.stringify(travelData));
+                        updateTotals();
+                    };
+                    reader.readAsText(file);
+                }
+            };
+            fileInput.click();
+        }
+    </script>
+
+</body>
+</html>

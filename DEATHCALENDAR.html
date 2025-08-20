@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weekly Calendar (2025–2050)</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f0f4f8;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #333;
+        }
+        .year {
+            margin: 20px 0;
+        }
+        .year h2 {
+            margin-bottom: 10px;
+            color: #555;
+        }
+        .month {
+            margin-bottom: 20px;
+        }
+        .month h3 {
+            margin-bottom: 5px;
+            color: #666;
+            text-align: left;
+            font-size: 18px;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(50px, 1fr));
+            gap: 10px;
+        }
+        .week {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 10px;
+            background: linear-gradient(135deg, #6c63ff, #63b4ff);
+            color: white;
+            border-radius: 8px;
+            text-align: center;
+            font-size: 12px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .week input {
+            margin-top: 5px;
+            transform: scale(1.2);
+        }
+        @media (max-width: 600px) {
+            .week {
+                font-size: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Weekly Calendar (2025–2050)</h1>
+        <!-- Generate years, months, and weeks -->
+        <div id="calendar"></div>
+    </div>
+    <script>
+        const startYear = 2025;
+        const endYear = 2050;
+        const months = [
+            "January", "February", "March", "April", "May", "June",
+            "July", "August", "September", "October", "November", "December"
+        ];
+        const weeksPerMonth = [4, 4, 5, 4, 4, 5, 4, 4, 5, 4, 4, 5]; // Approximate weeks per month
+        const calendar = document.getElementById("calendar");
+
+        // Function to save checkbox states
+        function saveState(year, month, week, checked) {
+            const key = `calendar_${year}_${month}_${week}`;
+            localStorage.setItem(key, checked);
+        }
+
+        // Function to load checkbox state
+        function loadState(year, month, week) {
+            const key = `calendar_${year}_${month}_${week}`;
+            return localStorage.getItem(key) === "true";
+        }
+
+        for (let year = startYear; year <= endYear; year++) {
+            const yearDiv = document.createElement("div");
+            yearDiv.className = "year";
+
+            const yearTitle = document.createElement("h2");
+            yearTitle.textContent = year;
+            yearDiv.appendChild(yearTitle);
+
+            for (let month = 0; month < 12; month++) {
+                const monthDiv = document.createElement("div");
+                monthDiv.className = "month";
+
+                const monthTitle = document.createElement("h3");
+                monthTitle.textContent = months[month];
+                monthDiv.appendChild(monthTitle);
+
+                const gridDiv = document.createElement("div");
+                gridDiv.className = "grid";
+
+                // Generate weeks for the month
+                for (let week = 1; week <= weeksPerMonth[month]; week++) {
+                    const weekDiv = document.createElement("div");
+                    weekDiv.className = "week";
+
+                    const weekLabel = document.createElement("span");
+                    weekLabel.textContent = `W${week}`;
+                    weekDiv.appendChild(weekLabel);
+
+                    const weekCheckbox = document.createElement("input");
+                    weekCheckbox.type = "checkbox";
+
+                    // Load state from localStorage
+                    if (loadState(year, month, week)) {
+                        weekCheckbox.checked = true;
+                    }
+
+                    // Save state on change
+                    weekCheckbox.addEventListener("change", () => {
+                        saveState(year, month, week, weekCheckbox.checked);
+                    });
+
+                    weekDiv.appendChild(weekCheckbox);
+                    gridDiv.appendChild(weekDiv);
+                }
+
+                monthDiv.appendChild(gridDiv);
+                yearDiv.appendChild(monthDiv);
+            }
+
+            calendar.appendChild(yearDiv);
+        }
+    </script>
+</body>
+</html>

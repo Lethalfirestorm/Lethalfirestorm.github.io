@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Real Estate Agent Goal Setting Plan and Record Keeping</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            color: #333;
+            margin: 0;
+            padding: 0;
+        }
+        header {
+            background-color: #2c3e50;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        .container {
+            width: 80%;
+            margin: 20px auto;
+        }
+        .form-container {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+        .form-container input, .form-container button {
+            padding: 10px;
+            margin: 5px 0;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .form-container input[type="number"], .form-container input[type="date"] {
+            width: 48%;
+            display: inline-block;
+        }
+        .form-container button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        .form-container button:hover {
+            background-color: #2980b9;
+        }
+        .totals {
+            margin-top: 20px;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+        .totals span {
+            padding: 10px;
+            background-color: #f7f9fc;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            text-align: center;
+            font-weight: bold;
+        }
+        .bar-chart-container {
+            width: 100%;
+            height: 400px;
+            margin-top: 30px;
+        }
+        .records-list {
+            margin-top: 20px;
+        }
+        .record-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            margin: 5px 0;
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .record-item button {
+            background-color: #e74c3c;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            padding: 5px 10px;
+        }
+        .record-item button:hover {
+            background-color: #c0392b;
+        }
+        .export-import-container {
+            margin-top: 20px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>Real Estate Agent Goal Setting Plan and Record Keeping</h1>
+</header>
+
+<div class="container">
+    <div class="form-container">
+        <h2>Input Data</h2>
+        <input type="number" id="homeValue" placeholder="Home Value ($)" oninput="calculateCommission()">
+        <input type="number" id="commissionRate" placeholder="Commission Rate (%)" oninput="calculateCommission()">
+        <input type="date" id="date">
+        <input type="number" id="peopleContacted" placeholder="People Contacted">
+        <input type="number" id="appointmentsBooked" placeholder="Appointments Booked">
+        <input type="number" id="presentationsGiven" placeholder="Presentations Given">
+        <input type="number" id="homesListed" placeholder="Homes Listed">
+        <input type="number" id="homesSold" placeholder="Homes Sold">
+        <button onclick="saveRecord()">Save Record</button>
+        <div>
+            <strong>Gross Commission: </strong><span id="grossCommission">$0</span>
+        </div>
+        <div class="totals">
+            <span style="background-color: #f8e8e8;">Gross Commissions: <span id="runningGrossCommission">$0</span></span>
+            <span style="background-color: #e8f8e8;">People Contacted: <span id="runningPeopleContacted">0</span></span>
+            <span style="background-color: #e8e8f8;">Appointments Booked: <span id="runningAppointmentsBooked">0</span></span>
+            <span style="background-color: #f8f8e8;">Presentations Given: <span id="runningPresentationsGiven">0</span></span>
+            <span style="background-color: #f8e8f8;">Homes Listed: <span id="runningHomesListed">0</span></span>
+            <span style="background-color: #e8f8f8;">Homes Sold: <span id="runningHomesSold">0</span></span>
+            <span style="background-color: #e8f8f8;">Income per Contact: <span id="incomePerContact">$0.00</span></span>
+        </div>
+    </div>
+
+    <div class="bar-chart-container">
+        <canvas id="efficiencyChart"></canvas>
+    </div>
+
+    <div class="records-list">
+        <h3>Records</h3>
+        <div id="recordsContainer"></div>
+    </div>
+
+    <div class="export-import-container">
+        <button onclick="exportData()">Export Data</button>
+        <input type="file" id="importFile" accept=".json" onchange="importData(event)">
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    let records = [];
+    let totalGrossCommission = 0;
+    let totalPeopleContacted = 0;
+    let totalAppointmentsBooked = 0;
+    let totalPresentationsGiven = 0;
+    let totalHomesListed = 0;
+    let totalHomesSold = 0;
+
+    const efficiencyChart = new Chart(document.getElementById('efficiencyChart'), {
+        type: 'bar',
+        data: {
+            labels: ['Contact-to-Appointment', 'Appointment-to-Presentation', 'Presentation-to-Listing', 'Listing-to-Sold'],
+            datasets: [{
+                label: 'Efficiency (%)',
+                data: [0, 0, 0, 0],
+                backgroundColor: ['#3498db', '#2ecc71', '#e74c3c', '#9b59b6'],
+                borderColor: ['#2980b9', '#27ae60', '#c0392b', '#8e44ad'],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 100
+                }
+            }
+        }
+    });
+
+    function calculateCommission() {
+        const homeValue = parseFloat(document.getElementById('homeValue').value) || 0;
+        const commissionRate = parseFloat(document.getElementById('commissionRate').value) || 0;
+        const grossCommission = (homeValue * commissionRate) / 100;
+        document.getElementById('grossCommission').textContent = `$${grossCommission.toFixed(2)}`;
+    }
+
+    function saveRecord() {
+        const homeValue = parseFloat(document.getElementById('homeValue').value) || 0;
+        const commissionRate = parseFloat(document.getElementById('commissionRate').value) || 0;
+        const grossCommission = (homeValue * commissionRate) / 100;
+        const date = document.getElementById('date').value;
+        const peopleContacted = parseInt(document.getElementById('peopleContacted').value) || 0;
+        const appointmentsBooked = parseInt(document.getElementById('appointmentsBooked').value) || 0;
+        const presentationsGiven = parseInt(document.getElementById('presentationsGiven').value) || 0;
+        const homesListed = parseInt(document.getElementById('homesListed').value) || 0;
+        const homesSold = parseInt(document.getElementById('homesSold').value) || 0;
+
+        const record = { date, grossCommission, peopleContacted, appointmentsBooked, presentationsGiven, homesListed, homesSold };
+        records.push(record);
+
+        updateTotals();
+        displayRecords();
+    }
+
+    function deleteRecord(index) {
+        records.splice(index, 1);
+        updateTotals();
+        displayRecords();
+    }
+
+    function updateTotals() {
+        totalGrossCommission = records.reduce((sum, r) => sum + r.grossCommission, 0);
+        totalPeopleContacted = records.reduce((sum, r) => sum + r.peopleContacted, 0);
+        totalAppointmentsBooked = records.reduce((sum, r) => sum + r.appointmentsBooked, 0);
+        totalPresentationsGiven = records.reduce((sum, r) => sum + r.presentationsGiven, 0);
+        totalHomesListed = records.reduce((sum, r) => sum + r.homesListed, 0);
+        totalHomesSold = records.reduce((sum, r) => sum + r.homesSold, 0);
+
+        document.getElementById('runningGrossCommission').textContent = `$${totalGrossCommission.toFixed(2)}`;
+        document.getElementById('runningPeopleContacted').textContent = totalPeopleContacted;
+        document.getElementById('runningAppointmentsBooked').textContent = totalAppointmentsBooked;
+        document.getElementById('runningPresentationsGiven').textContent = totalPresentationsGiven;
+        document.getElementById('runningHomesListed').textContent = totalHomesListed;
+        document.getElementById('runningHomesSold').textContent = totalHomesSold;
+
+        const incomePerContact = totalPeopleContacted > 0 ? totalGrossCommission / totalPeopleContacted : 0;
+        document.getElementById('incomePerContact').textContent = `$${incomePerContact.toFixed(2)}`;
+
+        const contactToAppointment = totalPeopleContacted > 0 ? (totalAppointmentsBooked / totalPeopleContacted) * 100 : 0;
+        const appointmentToPresentation = totalAppointmentsBooked > 0 ? (totalPresentationsGiven / totalAppointmentsBooked) * 100 : 0;
+        const presentationToListing = totalPresentationsGiven > 0 ? (totalHomesListed / totalPresentationsGiven) * 100 : 0;
+        const listingToSold = totalHomesListed > 0 ? (totalHomesSold / totalHomesListed) * 100 : 0;
+
+        efficiencyChart.data.datasets[0].data = [contactToAppointment, appointmentToPresentation, presentationToListing, listingToSold];
+        efficiencyChart.update();
+    }
+
+    function displayRecords() {
+        const recordsContainer = document.getElementById('recordsContainer');
+        recordsContainer.innerHTML = '';
+        records.forEach((record, index) => {
+            const recordDiv = document.createElement('div');
+            recordDiv.classList.add('record-item');
+            recordDiv.innerHTML = `
+                <span>${record.date}: $${record.grossCommission.toFixed(2)}</span>
+                <button onclick="deleteRecord(${index})">Delete</button>
+            `;
+            recordsContainer.appendChild(recordDiv);
+        });
+    }
+
+    function exportData() {
+        const blob = new Blob([JSON.stringify(records)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'real_estate_records.json';
+        a.click();
+    }
+
+    function importData(event) {
+        const file = event.target.files[0];
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const importedRecords = JSON.parse(e.target.result);
+            records = importedRecords;
+            updateTotals();
+            displayRecords();
+        };
+        reader.readAsText(file);
+    }
+</script>
+
+</body>
+</html>
