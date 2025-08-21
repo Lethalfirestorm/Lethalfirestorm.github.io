@@ -35,7 +35,7 @@
         </header>
 
         <!-- Grid for stock widgets -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div id="widget-grid" class="grid grid-cols-1 md:grid-cols-2 gap-8">
             <!-- TradingView Widget for NVDA -->
             <div class="tradingview-widget-container">
                 <div class="tradingview-widget-container__widget"></div>
@@ -57,28 +57,12 @@
 
         <!-- Manual Calculator Section -->
         <div class="mt-10 bg-white p-6 rounded-xl shadow-lg border border-gray-200">
-            <h2 class="text-2xl font-bold mb-6 text-gray-900">Manual Portfolio Calculator</h2>
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold text-gray-900">Manual Portfolio Calculator</h2>
+                <button id="add-stock-btn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg transition">Add New Stock</button>
+            </div>
             <div id="calculator-container" class="space-y-6">
-                <!-- Stock Input Row: NVDA -->
-                <div class="grid grid-cols-1 sm:grid-cols-4 gap-4 items-center stock-row">
-                    <span class="font-bold text-lg">NVDA</span>
-                    <input type="number" data-symbol="NVDA" name="shares" placeholder="Shares Owned" class="calc-input p-2 border rounded-md focus:ring-2 focus:ring-blue-500">
-                    <input type="number" data-symbol="NVDA" name="price" placeholder="Current Price (USD)" class="calc-input p-2 border rounded-md focus:ring-2 focus:ring-blue-500">
-                    <div class="text-lg font-semibold text-right">
-                        <span>Total: </span>
-                        <span class="total-value text-green-600">$0.00</span>
-                    </div>
-                </div>
-                <!-- Stock Input Row: NCLH -->
-                <div class="grid grid-cols-1 sm:grid-cols-4 gap-4 items-center stock-row">
-                    <span class="font-bold text-lg">NCLH</span>
-                    <input type="number" data-symbol="NCLH" name="shares" placeholder="Shares Owned" class="calc-input p-2 border rounded-md focus:ring-2 focus:ring-blue-500">
-                    <input type="number" data-symbol="NCLH" name="price" placeholder="Current Price (USD)" class="calc-input p-2 border rounded-md focus:ring-2 focus:ring-blue-500">
-                    <div class="text-lg font-semibold text-right">
-                        <span>Total: </span>
-                        <span class="total-value text-green-600">$0.00</span>
-                    </div>
-                </div>
+                <!-- Stock rows will be dynamically inserted here by JavaScript -->
             </div>
         </div>
 
@@ -100,18 +84,86 @@
                 <span id="exchange-rate" class="font-medium">Fetching...</span>
             </div>
         </div>
-
     </div>
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            let usdToCadRate = 1.37; // Default rate, will be updated via API
+            let usdToCadRate = 1.37; // Default rate
 
             // --- DOM ELEMENTS ---
-            const calculatorInputs = document.querySelectorAll('.calc-input');
+            const calculatorContainer = document.getElementById('calculator-container');
+            const addStockBtn = document.getElementById('add-stock-btn');
             const totalUsdEl = document.getElementById('total-usd');
             const totalCadEl = document.getElementById('total-cad');
             const exchangeRateEl = document.getElementById('exchange-rate');
+
+            // --- LOCAL STORAGE FUNCTIONS ---
+            function savePortfolio() {
+                const stockRows = document.querySelectorAll('.stock-row');
+                const portfolioData = [];
+                stockRows.forEach(row => {
+                    const symbolInput = row.querySelector('input[name="symbol"]');
+                    const sharesInput = row.querySelector('input[name="shares"]');
+                    const priceInput = row.querySelector('input[name="price"]');
+                    portfolioData.push({
+                        symbol: symbolInput.value.toUpperCase(),
+                        shares: sharesInput.value,
+                        price: priceInput.value
+                    });
+                });
+                localStorage.setItem('stockPortfolio', JSON.stringify(portfolioData));
+            }
+
+            function loadPortfolio() {
+                const savedData = localStorage.getItem('stockPortfolio');
+                if (savedData) {
+                    const portfolioData = JSON.parse(savedData);
+                    if (portfolioData.length > 0) {
+                        portfolioData.forEach(stock => addStockRow(stock.symbol, stock.shares, stock.price));
+                    } else {
+                        // If saved data is empty, add default stocks
+                        addStockRow('NVDA');
+                        addStockRow('NCLH');
+                    }
+                } else {
+                    // If no saved data, add default stocks
+                    addStockRow('NVDA');
+                    addStockRow('NCLH');
+                }
+            }
+
+            // --- DYNAMIC ELEMENT CREATION ---
+            function addStockRow(symbol = '', shares = '', price = '') {
+                const row = document.createElement('div');
+                row.className = 'grid grid-cols-1 sm:grid-cols-5 gap-4 items-center stock-row';
+                
+                row.innerHTML = `
+                    <input type="text" name="symbol" placeholder="Symbol (e.g., AAPL)" value="${symbol}" class="calc-input p-2 border rounded-md focus:ring-2 focus:ring-blue-500 uppercase">
+                    <input type="number" name="shares" placeholder="Shares Owned" value="${shares}" class="calc-input p-2 border rounded-md focus:ring-2 focus:ring-blue-500">
+                    <input type="number" name="price" placeholder="Current Price (USD)" value="${price}" class="calc-input p-2 border rounded-md focus:ring-2 focus:ring-blue-500">
+                    <div class="text-lg font-semibold text-right sm:col-span-1">
+                        <span>Total: </span>
+                        <span class="total-value text-green-600">$0.00</span>
+                    </div>
+                    <button class="remove-stock-btn bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg transition">Remove</button>
+                `;
+                
+                calculatorContainer.appendChild(row);
+                
+                // Add event listeners to the new inputs and button
+                row.querySelectorAll('.calc-input').forEach(input => {
+                    input.addEventListener('input', () => {
+                        updatePortfolioTotals();
+                        savePortfolio();
+                    });
+                });
+                
+                row.querySelector('.remove-stock-btn').addEventListener('click', () => {
+                    row.remove();
+                    updatePortfolioTotals();
+                    savePortfolio();
+                });
+            }
 
             // --- API FUNCTION ---
             async function fetchExchangeRate() {
@@ -122,7 +174,6 @@
                     if (data && data.rates && data.rates.CAD) {
                         usdToCadRate = data.rates.CAD;
                         exchangeRateEl.textContent = `1 USD = ${usdToCadRate.toFixed(4)} CAD`;
-                        // Recalculate totals whenever the rate is updated
                         updatePortfolioTotals();
                     }
                 } catch (error) {
@@ -153,7 +204,6 @@
                 });
 
                 const grandTotalCad = grandTotalUsd * usdToCadRate;
-
                 totalUsdEl.textContent = formatCurrency(grandTotalUsd, 'USD');
                 totalCadEl.textContent = formatCurrency(grandTotalCad, 'CAD');
             }
@@ -168,17 +218,16 @@
             }
 
             // --- EVENT LISTENERS ---
-            calculatorInputs.forEach(input => {
-                input.addEventListener('input', updatePortfolioTotals);
+            addStockBtn.addEventListener('click', () => {
+                addStockRow();
             });
 
-            // --- INITIALIZATION AND INTERVALS ---
+            // --- INITIALIZATION ---
             async function initialize() {
-                await fetchExchangeRate(); // Get initial exchange rate
-                updatePortfolioTotals();   // Initial UI render
-                
-                // Update exchange rate every 10 minutes
-                setInterval(fetchExchangeRate, 600000); // <-- FIXED THE TYPO HERE
+                loadPortfolio();
+                await fetchExchangeRate();
+                updatePortfolioTotals();
+                setInterval(fetchExchangeRate, 600000); // Update exchange rate every 10 minutes
             }
 
             initialize();
