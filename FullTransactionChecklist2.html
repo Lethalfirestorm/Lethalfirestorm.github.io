@@ -1,0 +1,858 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ken's Master Listing and Selling Checklist</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+
+        :root {
+            --bg-color: #f0f2f5;
+            --card-bg: #ffffff;
+            --primary-text: #1a202c;
+            --secondary-text: #4a5568;
+            --accent-color: #3b82f6;
+            --accent-color-light: #dbeafe;
+            --border-color: #e2e8f0;
+            --success-color: #10b981;
+            --danger-color: #ef4444;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--primary-text);
+            margin: 0;
+            padding: 20px;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--primary-text);
+            text-align: center;
+            margin-bottom: 1rem;
+        }
+
+        /* --- Transaction Hub --- */
+        .transaction-hub {
+            background-color: var(--card-bg);
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+            margin-bottom: 2rem;
+        }
+        
+        .hub-controls {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .transaction-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+        }
+
+        .transaction-tab {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.5rem 0.75rem 0.5rem 1rem;
+            background-color: var(--bg-color);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .transaction-tab:hover {
+            background-color: var(--accent-color-light);
+            border-color: var(--accent-color);
+        }
+        .transaction-tab.active {
+            background-color: var(--accent-color);
+            color: white;
+            border-color: var(--accent-color);
+        }
+        .tab-details {
+            display: flex;
+            flex-direction: column;
+        }
+        .tab-client { font-weight: 600; }
+        .tab-address { font-size: 0.8rem; opacity: 0.8; }
+        .tab-type {
+            font-size: 0.7rem;
+            font-weight: 700;
+            padding: 0.1rem 0.4rem;
+            border-radius: 4px;
+            margin-top: 4px;
+            text-transform: uppercase;
+        }
+        .type-listing { background-color: #fee2e2; color: #b91c1c; }
+        .type-purchase { background-color: #dbeafe; color: #1e40af; }
+        .transaction-tab.active .type-listing, .transaction-tab.active .type-purchase {
+             background-color: rgba(255,255,255,0.2);
+             color: white;
+        }
+
+        
+        .tab-actions { display: flex; gap: 0.25rem; }
+        .tab-action-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 0.25rem;
+            opacity: 0.6;
+            transition: opacity 0.2s;
+        }
+        .tab-action-btn:hover { opacity: 1; }
+        .transaction-tab.active .tab-action-btn { filter: brightness(0) invert(1); }
+        .tab-action-btn svg { width: 16px; height: 16px; display: block; }
+
+
+        /* --- Dashboard --- */
+        .dashboard {
+            display: flex;
+            gap: 2rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+        .chart-container, .global-backup-panel {
+            flex: 1;
+            min-width: 300px;
+            background-color: var(--card-bg);
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+        }
+        .global-backup-panel h3 { margin-top: 0; text-align: center; color: var(--secondary-text); font-weight: 600; }
+        .button-group { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+        
+        /* --- MODIFICATION START --- */
+        .global-backup-panel .btn {
+            width: 100%;
+            margin-top: 1rem;
+        }
+        /* --- MODIFICATION END --- */
+
+        .btn { padding: 0.75rem 1rem; border: none; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; justify-content: center; gap: 0.5rem; }
+        .btn-primary { background-color: var(--accent-color); color: white; }
+        .btn-primary:hover { background-color: #2563eb; }
+        .btn-secondary { background-color: var(--success-color); color: white; }
+        .btn-secondary:hover { background-color: #059669; }
+        .btn-cancel { background-color: #a0aec0; color: white; }
+        .btn-cancel:hover { background-color: #718096; }
+        .btn-danger { background-color: var(--danger-color); color: white; }
+        .btn-danger:hover { background-color: #dc2626; }
+        .file-input { display: none; }
+        
+        /* --- Checklist --- */
+        #checklist-wrapper.hidden, .empty-state.hidden {
+            display: none;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            background-color: var(--card-bg);
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+        }
+        .empty-state h2 { margin-top: 0; }
+
+        .checklist-section { background-color: var(--card-bg); border-radius: 12px; margin-bottom: 1.5rem; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); overflow: hidden; }
+        .section-header { padding: 1rem 1.5rem; cursor: pointer; display: flex; justify-content: space-between; align-items: center; background-color: #f7fafc; border-bottom: 1px solid var(--border-color); }
+        .section-header:hover { background-color: #edf2f7; }
+        .section-header h2 { margin: 0; font-size: 1.25rem; }
+        .arrow { transition: transform 0.3s ease; }
+        .collapsed .arrow { transform: rotate(-90deg); }
+        .section-content { padding: 1.5rem; display: block; }
+        .collapsed .section-content { display: none; }
+        .progress-bar-container { width: 100%; background-color: var(--border-color); border-radius: 99px; height: 10px; margin-bottom: 1.5rem; overflow: hidden; }
+        .progress-bar { height: 100%; width: 0%; background-color: var(--success-color); border-radius: 99px; transition: width 0.5s ease; }
+        .task-category { margin-bottom: 1.5rem; }
+        .task-category h3 { margin-top: 0; margin-bottom: 0.75rem; padding-bottom: 0.5rem; border-bottom: 2px solid var(--accent-color-light); font-size: 1.1rem; color: var(--accent-color); }
+        .task-item { display: flex; align-items: center; padding: 0.5rem 0; }
+        .task-item.sub-task { padding-left: 24px; }
+        .task-item.sub-task::before { content: '•'; margin-right: 12px; color: var(--secondary-text); }
+        .task-item input[type="checkbox"] { margin-right: 12px; width: 18px; height: 18px; accent-color: var(--success-color); }
+        .task-item label { font-size: 1rem; flex-grow: 1; }
+        .task-item.completed label { text-decoration: line-through; color: var(--secondary-text); }
+
+        /* --- Modal Styles --- */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.6);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s, visibility 0.3s;
+        }
+        .modal-overlay.visible {
+            opacity: 1;
+            visibility: visible;
+        }
+        .modal-content {
+            background-color: var(--card-bg);
+            padding: 2rem;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+            transform: scale(0.95);
+            transition: transform 0.3s;
+        }
+        .modal-overlay.visible .modal-content {
+            transform: scale(1);
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+        .modal-header h2 { margin: 0; }
+        .close-modal { font-size: 1.5rem; cursor: pointer; color: var(--secondary-text); background: none; border: none; }
+        .form-group { margin-bottom: 1rem; }
+        .form-group label { display: block; font-weight: 600; margin-bottom: 0.5rem; }
+        .form-group input[type="text"] {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 1rem;
+            box-sizing: border-box;
+        }
+        .radio-group { display: flex; gap: 1rem; }
+        .radio-group label { display: flex; align-items: center; gap: 0.5rem; }
+        .modal-footer { margin-top: 1.5rem; display: flex; justify-content: flex-end; gap: 0.75rem; }
+
+
+        @media (max-width: 768px) {
+            body { padding: 10px; }
+            header h1 { font-size: 1.8rem; }
+            .dashboard, .hub-controls { flex-direction: column; }
+            .button-group { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <h1>Ken's Master Listing and Selling Checklist</h1>
+        </header>
+
+        <section class="transaction-hub">
+            <div class="hub-controls">
+                <button id="startNewTransactionBtn" class="btn btn-primary">➕ Start New Transaction</button>
+                <button id="addArchivedTransactionBtn" class="btn btn-secondary">⬆️ Add Archived Transaction</button>
+                <button id="importFullBackupBtn" class="btn btn-danger">⬆️ Import Full Backup (Overwrite)</button>
+            </div>
+            <div id="transactionList" class="transaction-list"></div>
+        </section>
+
+        <section id="checklist-wrapper" class="hidden">
+             <div class="dashboard">
+                <div class="chart-container">
+                    <canvas id="overallProgressChart"></canvas>
+                </div>
+                <div class="global-backup-panel">
+                    <h3>System Backup & Recovery</h3>
+                    <button id="exportFullBackupBtn" class="btn btn-primary">⬇️ Export Full Backup</button>
+                </div>
+            </div>
+            <main id="checklist-container"></main>
+        </section>
+
+        <section id="emptyState" class="empty-state">
+            <h2>No Active Transactions</h2>
+            <p>Click "Start New Transaction" to begin, or import a backup.</p>
+        </section>
+    </div>
+    
+    <div id="newTransactionModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>New Transaction</h2>
+                <button class="close-modal">&times;</button>
+            </div>
+            <form id="newTransactionForm">
+                <div class="form-group">
+                    <label for="clientName">Client Name</label>
+                    <input type="text" id="clientName" required>
+                </div>
+                <div class="form-group">
+                    <label for="propertyAddress">Property Address</label>
+                    <input type="text" id="propertyAddress" required>
+                </div>
+                <div class="form-group">
+                    <label>Transaction Type</label>
+                    <div class="radio-group">
+                        <label>
+                            <input type="radio" name="transactionType" value="listing" checked> Listing (Seller)
+                        </label>
+                        <label>
+                            <input type="radio" name="transactionType" value="purchase"> Purchase (Buyer)
+                        </label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-primary">Save Transaction</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="confirmModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="confirmModalTitle">Are you sure?</h2>
+                 <button class="close-modal">&times;</button>
+            </div>
+            <p id="confirmModalMessage">This action cannot be undone.</p>
+            <div class="modal-footer">
+                <button id="confirmModalCancelBtn" class="btn btn-cancel">Cancel</button>
+                <button id="confirmModalConfirmBtn" class="btn btn-danger">Confirm</button>
+            </div>
+        </div>
+    </div>
+    
+    <input type="file" id="importFile" class="file-input" accept=".json, .xlsx, .xls">
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    // --- MASTER CHECKLIST TEMPLATES (REORGANIZED & CORRECTED) ---
+    const checklistTemplates = {
+        listing: {
+            "listing-appointment": { title: "Phase 1: The Listing Appointment", tasks: [
+                { id: "la-prep", text: "Appointment Prep", type: 'category' },
+                { id: "la-preresearch", text: "Pre-research the area and have an idea of sales and actives prior to meeting.", parent: "la-prep", type: 'task' },
+                { id: "la-create-cma-pre", text: "Create a CMA in case they are ready to list.", parent: "la-prep", type: 'task' },
+                { id: "la-callseller", text: "Call seller to confirm they have: Key, Survey, All decision makers present.", parent: "la-prep", type: 'task' },
+                { id: "la-askquestions", text: "Ask: When do they want to be sold by? Where are they moving?", parent: "la-prep", type: 'task' },
+                { id: "la-droppackage", text: "Drop off pre-listing package one day prior to the listing appointment.", parent: "la-prep", type: 'task' },
+                
+                { id: "la-cma-creation", text: "CMA Creation Steps", type: 'category' },
+                { id: "la-cma-login", text: "Log in to ITSO (HBMORGAKE / ilovemoney11).", parent: "la-cma-creation", type: 'task' },
+                { id: "la-cma-matrix", text: "Click on RAHB Matrix.", parent: "la-cma-creation", type: 'task' },
+                { id: "la-cma-nav", text: "Navigate to My Matrix > My CMA.", parent: "la-cma-creation", type: 'task' },
+                { id: "la-cma-start", text: "Start a new CMA, add New Contact, and work through pages.", parent: "la-cma-creation", type: 'task' },
+                { id: "la-cma-review", text: "View, adjust, and print CMA to bring to appointment.", parent: "la-cma-creation", type: 'task' },
+
+                { id: "la-appt-prep", text: "The Appointment: Documents & Tools", type: 'category' },
+                { id: "la-appt-login", text: "Log in to ITSO (MORGAKE / ilovemoney11) for Webforms.", parent: "la-appt-prep", type: 'task' },
+                { id: "la-appt-geowarehouse", text: "Use Tools -> GEOWAREHOUSE for legal description.", parent: "la-appt-prep", type: 'task' },
+                { id: "la-appt-transactionkit", text: "Open New Listing Paperwork Transaction Kit.", parent: "la-appt-prep", type: 'task' },
+                { id: "la-doc-listing", text: "Have Listing Agreement pre-filled out and ready.", parent: "la-appt-prep", isSubtask: true, type: 'task' },
+                { id: "la-doc-datainput", text: "Data Input Sheet for Hamilton Board.", parent: "la-appt-prep", isSubtask: true, type: 'task' },
+                { id: "la-doc-oakville", text: "Paperwork for Oakville/Toronto Board.", parent: "la-appt-prep", isSubtask: true, type: 'task' },
+                { id: "la-doc-wwar", text: "Working with a Realtor form.", parent: "la-appt-prep", isSubtask: true, type: 'task' },
+                { id: "la-doc-fintrac", text: "Fintrac form.", parent: "la-appt-prep", isSubtask: true, type: 'task' },
+                { id: "la-doc-buyeragency", text: "Buyer Agency Agreement.", parent: "la-appt-prep", isSubtask: true, type: 'task' },
+                { id: "la-doc-treb", text: "TREB Form for submission.", parent: "la-appt-prep", isSubtask: true, type: 'task' },
+                { id: "la-tool-geoinfo", text: "Geo Warehouse property information.", parent: "la-appt-prep", isSubtask: true, type: 'task' },
+                { id: "la-tool-taxes", text: "Property Tax information.", parent: "la-appt-prep", isSubtask: true, type: 'task' },
+                { id: "la-tool-lockbox", text: "Bring Lockbox.", parent: "la-appt-prep", isSubtask: true, type: 'task' },
+                { id: "la-tool-sign", text: "Bring Sign.", parent: "la-appt-prep", isSubtask: true, type: 'task' },
+
+                { id: "la-during", text: "The Appointment: In-Person Steps", type: 'category' },
+                { id: "la-during-tour", text: "Tour the house, compliment, and take notes.", parent: "la-during", type: 'task' },
+                { id: "la-during-favorite", text: "Ask what their favorite part of the home is (why they chose it).", parent: "la-during", type: 'task' },
+                { id: "la-during-presentation", text: "Go into listing presentation.", parent: "la-during", type: 'task' },
+                { id: "la-during-showing", text: "Discuss showing instructions (contact, notice, pets, shoes).", parent: "la-during", type: 'task' },
+                { id: "la-during-presentcma", text: "Present the CMA (if appropriate).", parent: "la-during", type: 'task' },
+                { id: "la-during-sign", text: "Have them sign the contract.", parent: "la-during", type: 'task' },
+            ]},
+            "active-listing": { title: "Phase 2: Active Listing & Marketing", tasks: [ { id: "al-input", text: "Submit listing to brokerage and upload to MLS/Lofty.", type: 'task' }, { id: "al-marketing", text: "Launch Marketing: Design/distribute flyers, post on social media.", type: 'task' }, { id: "al-showings", text: "Host private showings and open houses.", type: 'task' }, { id: "al-comm", text: "Collect and relay all showing feedback to the seller.", type: 'task' }, { id: "al-updates", text: "Provide regular updates on market conditions.", type: 'task' } ] },
+            "under-contract-seller": { title: "Phase 3: Under Contract to Close", tasks: [ { id: "ucs-negotiate", text: "Present, review, and negotiate all offers with the seller.", type: 'task' }, { id: "ucs-finalize", text: "Finalize the sale agreement and obtain all signatures.", type: 'task' }, { id: "ucs-conditional", text: "Coordinate and track dates for inspections and appraisals.", type: 'task' }, { id: "ucs-repairs", text: "Address inspection issues and negotiate repairs or credits.", type: 'task' }, { id: "ucs-docs", text: "Submit all necessary documents to the title company.", type: 'task' }, { id: "ucs-loan", text: "Track the status of the buyer's loan with their lender.", type: 'task' }, { id: "ucs-closingprep", text: "Review closing documents with seller and attend final walk-through.", type: 'task' }, ] },
+            "closed-deal-seller": { title: "Phase 4: Closed Deal", tasks: [ { id: "cds-attend", text: "Attend the closing meeting with the seller.", type: 'task' }, { id: "cds-confirm", text: "Confirm funds have been wired and keys have been transferred.", type: 'task' }, { id: "cds-packet", text: "Provide the seller with a complete closing packet.", type: 'task' }, { id: "cds-followup", text: "Follow up for satisfaction, feedback, and referrals.", type: 'task' } ] }
+        },
+        purchase: {
+            "buyer-pre-contract": { title: "Phase 1: Pre-Contract", tasks: [ { id: "bpc-consult", text: "Conduct initial buyer consultation (needs, budget, timeline).", type: 'task'}, { id: "bpc-finance", text: "Arrange financing pre-approval with a mortgage lender.", type: 'task' }, { id: "bpc-research", text: "Research and identify suitable properties on MLS.", type: 'task' }, { id: "bpc-showings", text: "Schedule and attend property showings.", type: 'task' }, { id: "bpc-cma", text: "Provide a CMA for properties of interest.", type: 'task' } ] },
+            "offer-submission": { title: "Phase 2: Crafting & Submitting the Offer", tasks: [
+                { id: "os-draft", text: "Draft Purchase Offer", type: 'category'},
+                { id: "os-disclosures", text: "Pull disclosures from Listing agent.", parent: "os-draft", type: 'task'},
+                { id: "os-strategy", text: "Discuss offer strategy and terms with the buyer.", parent: "os-draft", type: 'task'},
+                { id: "os-prepare", text: "Prepare the purchase agreement and necessary addenda.", parent: "os-draft", type: 'task'},
+                { id: "os-review", text: "Review offer with the buyer and obtain signatures.", parent: "os-draft", type: 'task'},
+                { id: "os-submit", text: "Submit the offer to the listing agent.", parent: "os-draft", type: 'task'},
+                { id: "oc-components", text: "Offer Components Checklist", type: 'category' }, 
+                { id: "oc-deposit", text: "Deposit Amount", parent: "oc-components", type: 'task' }, 
+                { id: "oc-closing", text: "Closing Date", parent: "oc-components", type: 'task' }, 
+                { id: "oc-inclusions", text: "Inclusions", parent: "oc-components", type: 'task' }, 
+                { id: "oc-exclusions", text: "Exclusions", parent: "oc-components", type: 'task' }, 
+                { id: "oc-irrevocable", text: "Irrevocable Date & Time", parent: "oc-components", type: 'task' }, 
+                { id: "oc-gst", text: "GST Status (Included/In addition)", parent: "oc-components", type: 'task' }, 
+                { id: "oc-title", text: "Title Search Date", parent: "oc-components", type: 'task' }, 
+                { id: "oc-conditions", text: "Common Conditions Checklist", type: 'category' }, 
+                { id: "oc-cond-finance", text: "Financing", parent: "oc-conditions", type: 'task' }, 
+                { id: "oc-cond-inspect", text: "Inspection", parent: "oc-conditions", type: 'task' }, 
+                { id: "oc-cond-status", text: "Status Certificate Approval (Condo)", parent: "oc-conditions", type: 'task' }, 
+                { id: "oc-cond-sale", text: "Sale of Buyer’s Property", parent: "oc-conditions", type: 'task' },
+            ]},
+            "buyer-under-contract": { title: "Phase 3: Under Contract", tasks: [ { id: "buc-negotiate", text: "Negotiate the purchase price and terms.", type: 'task' }, { id: "buc-finalize", text: "Finalize the purchase agreement.", type: 'task' }, { id: "buc-disclosures", text: "Review all seller disclosures.", type: 'task' }, { id: "buc-inspect", text: "Coordinate and review all inspections.", type: 'task' }, { id: "buc-repairs", text: "Negotiate repairs or credits based on inspection results.", type: 'task' }, { id: "buc-appraisal", text: "Coordinate the property appraisal with the lender.", type: 'task' } ] },
+            "buyer-pending": { title: "Phase 4: Pending", tasks: [ { id: "bp-diligence", text: "Ensure buyer completes all due diligence documents.", type: 'task' }, { id: "bp-loan", text: "Track loan approval process.", type: 'task' }, { id: "bp-walkthrough", text: "Schedule and attend final walk-through.", type: 'task' } ] },
+            "buyer-closed": { title: "Phase 5: Closed", tasks: [ { id: "bc-attend", text: "Attend closing meeting with buyer.", type: 'task' }, { id: "bc-keys", text: "Ensure keys and possessions are transferred.", type: 'task' }, { id: "bc-packet", text: "Provide buyer with a complete closing packet.", type: 'task' }, { id: "bc-followup", text: "Follow up for satisfaction, feedback, and referrals.", type: 'task' } ] }
+        }
+    };
+    
+    // --- STATE MANAGEMENT ---
+    let transactions = [];
+    let activeTransactionId = null;
+    let chart;
+    const STORAGE_KEY = 'kensMasterChecklistV5';
+
+    // --- DOM REFERENCES ---
+    const transactionListContainer = document.getElementById('transactionList');
+    const checklistContainer = document.getElementById('checklist-container');
+    const checklistWrapper = document.getElementById('checklist-wrapper');
+    const emptyStateEl = document.getElementById('emptyState');
+    const importFileInput = document.getElementById('importFile');
+    const newTransactionModal = document.getElementById('newTransactionModal');
+    const newTransactionForm = document.getElementById('newTransactionForm');
+    const confirmModal = document.getElementById('confirmModal');
+    const confirmModalTitle = document.getElementById('confirmModalTitle');
+    const confirmModalMessage = document.getElementById('confirmModalMessage');
+    let confirmModalConfirmBtn = document.getElementById('confirmModalConfirmBtn');
+    
+    // --- CORE FUNCTIONS ---
+    function saveState() {
+        const activeTransaction = transactions.find(t => t.id === activeTransactionId);
+        if (activeTransaction) {
+            const state = {};
+            document.querySelectorAll('#checklist-container input[type="checkbox"]').forEach(cb => {
+                state[cb.dataset.taskId] = cb.checked;
+            });
+            activeTransaction.checklistState = state;
+        }
+        
+        const appState = { transactions, activeTransactionId };
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
+    }
+
+    function loadState(stateToLoad = null) {
+        const appState = stateToLoad || JSON.parse(localStorage.getItem(STORAGE_KEY));
+        if (appState && appState.transactions) {
+            transactions = appState.transactions;
+            activeTransactionId = appState.activeTransactionId;
+        } else {
+            transactions = [];
+            activeTransactionId = null;
+        }
+        renderUI();
+    }
+
+    function renderUI() {
+        renderTransactionHub();
+        renderChecklistForActiveTransaction();
+        updateGlobalUI();
+    }
+
+    function renderTransactionHub() {
+        transactionListContainer.innerHTML = '';
+        transactions.forEach(t => {
+            const tab = document.createElement('div');
+            tab.className = 'transaction-tab';
+            tab.dataset.id = t.id;
+            if (t.id === activeTransactionId) tab.classList.add('active');
+            
+            const typeClass = t.type === 'listing' ? 'type-listing' : 'type-purchase';
+            const typeText = t.type === 'listing' ? 'Listing' : 'Purchase';
+
+            tab.innerHTML = `
+                <div class="tab-details">
+                    <span class="tab-client">${t.clientName}</span>
+                    <span class="tab-address">${t.propertyAddress}</span>
+                    <span class="tab-type ${typeClass}">${typeText}</span>
+                </div>
+                <div class="tab-actions">
+                    <button class="tab-action-btn export-json" title="Export JSON"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor"><path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/><path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/></svg></button>
+                    <button class="tab-action-btn export-excel" title="Export Excel"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M13.884 5.32a.5.5 0 0 1 .624.56l-2.5 5a.5.5 0 0 1-.555.27L8.5 10.235l-2.453.916a.5.5 0 0 1-.555-.27l-2.5-5a.5.5 0 0 1 .624-.56L6 6.365l2.047-2.34a.5.5 0 0 1 .612-.054L11.5 5.565l2.384-.245zM4.793 6.513l2.047 4.095 2.453-.916-2.047-4.095-2.453.916zm3.207-2.16L6.5 6.365 4.116 6.12 6 2.025l2 2.328zM10.5 5.565L8.612 3.91 10.5 2.025l1.884 2.155-1.884.245z"/></svg></button>
+                    <button class="tab-action-btn delete-transaction" title="Delete"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor"><path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/><path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/></svg></button>
+                </div>
+            `;
+            transactionListContainer.appendChild(tab);
+        });
+    }
+    
+    function renderChecklistForActiveTransaction() {
+        checklistContainer.innerHTML = '';
+        const activeTransaction = transactions.find(t => t.id === activeTransactionId);
+        if (!activeTransaction) {
+            updateProgress();
+            return;
+        }
+
+        const template = checklistTemplates[activeTransaction.type];
+        for (const sectionId in template) {
+            const sectionData = template[sectionId];
+            const sectionDiv = document.createElement('div');
+            sectionDiv.className = 'checklist-section collapsed';
+            sectionDiv.id = sectionId;
+
+            const header = document.createElement('div');
+            header.className = 'section-header';
+            header.innerHTML = `<h2>${sectionData.title}</h2><span class="arrow">▶</span>`;
+            header.addEventListener('click', () => sectionDiv.classList.toggle('collapsed'));
+
+            const content = document.createElement('div');
+            content.className = 'section-content';
+            content.innerHTML = `<div class="progress-bar-container"><div class="progress-bar" id="${sectionId}-progress"></div></div>`;
+
+            const categoryElements = new Map();
+
+            sectionData.tasks.forEach(task => {
+                if (task.type === 'category') {
+                    const categoryDiv = document.createElement('div');
+                    categoryDiv.className = 'task-category';
+                    categoryDiv.innerHTML = `<h3>${task.text}</h3>`;
+                    content.appendChild(categoryDiv);
+                    categoryElements.set(task.id, categoryDiv);
+                }
+            });
+
+            sectionData.tasks.forEach(task => {
+                if (task.type !== 'category') {
+                    const taskItem = document.createElement('div');
+                    taskItem.className = 'task-item';
+                    if (task.isSubtask) taskItem.classList.add('sub-task');
+                    
+                    taskItem.innerHTML = `<input type="checkbox" id="${task.id}" data-task-id="${task.id}"><label for="${task.id}">${task.text}</label>`;
+                    
+                    const parentElement = categoryElements.get(task.parent);
+                    if (parentElement) {
+                        parentElement.appendChild(taskItem);
+                    } else {
+                        content.appendChild(taskItem);
+                    }
+                }
+            });
+
+            sectionDiv.appendChild(header);
+            sectionDiv.appendChild(content);
+            checklistContainer.appendChild(sectionDiv);
+        }
+        
+        document.querySelectorAll('#checklist-container input[type="checkbox"]').forEach(cb => {
+            cb.checked = activeTransaction.checklistState[cb.dataset.taskId] || false;
+            const taskItem = cb.closest('.task-item');
+            if (cb.checked) {
+                taskItem.classList.add('completed');
+            } else {
+                taskItem.classList.remove('completed');
+            }
+        });
+        updateProgress();
+    }
+    
+    function updateGlobalUI() {
+        if(transactions.length > 0 && activeTransactionId) {
+            checklistWrapper.classList.remove('hidden');
+            emptyStateEl.classList.add('hidden');
+        } else {
+            checklistWrapper.classList.add('hidden');
+            emptyStateEl.classList.remove('hidden');
+        }
+    }
+
+    function switchTransaction(id) {
+        if (id === activeTransactionId) return;
+        saveState();
+        activeTransactionId = id;
+        renderUI();
+    }
+
+    // --- MODAL & CONFIRMATION LOGIC ---
+    function showConfirmModal(title, message, onConfirm) {
+        confirmModalTitle.textContent = title;
+        confirmModalMessage.textContent = message;
+
+        const handleConfirm = () => {
+            onConfirm();
+            hideConfirmModal();
+        };
+        
+        const newConfirmBtn = confirmModalConfirmBtn.cloneNode(true);
+        confirmModalConfirmBtn.parentNode.replaceChild(newConfirmBtn, confirmModalConfirmBtn);
+        confirmModalConfirmBtn = newConfirmBtn;
+
+        confirmModalConfirmBtn.addEventListener('click', handleConfirm, { once: true });
+        confirmModal.classList.add('visible');
+    }
+
+    function hideConfirmModal() {
+        confirmModal.classList.remove('visible');
+    }
+
+    // --- EVENT LISTENERS & HANDLERS ---
+    function setupListeners() {
+        // Main controls
+        document.getElementById('startNewTransactionBtn').addEventListener('click', () => newTransactionModal.classList.add('visible'));
+        document.getElementById('addArchivedTransactionBtn').addEventListener('click', handleAddArchived);
+        document.getElementById('exportFullBackupBtn').addEventListener('click', handleExportFullBackup);
+        document.getElementById('importFullBackupBtn').addEventListener('click', handleImportFullBackup);
+
+        // Transaction Hub (delegated)
+        transactionListContainer.addEventListener('click', (e) => {
+            const tab = e.target.closest('.transaction-tab');
+            if (!tab) return;
+            const id = tab.dataset.id;
+            if (e.target.closest('.delete-transaction')) {
+                deleteTransaction(id);
+            } else if (e.target.closest('.export-json')) {
+                exportIndividualTransaction(id, 'json');
+            } else if (e.target.closest('.export-excel')) {
+                exportIndividualTransaction(id, 'excel');
+            } else {
+                switchTransaction(id);
+            }
+        });
+
+        // Checklist (delegated)
+        checklistContainer.addEventListener('change', (e) => {
+            if (e.target.matches('input[type="checkbox"]')) {
+                const taskItem = e.target.closest('.task-item');
+                if (e.target.checked) {
+                    taskItem.classList.add('completed');
+                } else {
+                    taskItem.classList.remove('completed');
+                }
+                saveState();
+                updateProgress();
+            }
+        });
+
+        // Modals
+        newTransactionForm.addEventListener('submit', handleNewTransactionSubmit);
+        document.querySelectorAll('.close-modal').forEach(btn => btn.addEventListener('click', () => btn.closest('.modal-overlay').classList.remove('visible')));
+        [newTransactionModal, confirmModal].forEach(modal => modal.addEventListener('click', (e) => { if (e.target === modal) modal.classList.remove('visible'); }));
+        document.getElementById('confirmModalCancelBtn').addEventListener('click', hideConfirmModal);
+    }
+
+    function handleNewTransactionSubmit(e) {
+        e.preventDefault();
+        const clientName = document.getElementById('clientName').value;
+        const propertyAddress = document.getElementById('propertyAddress').value;
+        const type = document.querySelector('input[name="transactionType"]:checked').value;
+        
+        const newTransaction = { id: `txn_${Date.now()}`, clientName, propertyAddress, type, checklistState: {} };
+        transactions.push(newTransaction);
+        activeTransactionId = newTransaction.id;
+        
+        newTransactionForm.reset();
+        newTransactionModal.classList.remove('visible');
+
+        saveState();
+        renderUI();
+    }
+    
+    function handleAddArchived() {
+        importFileInput.onchange = (e) => {
+            const file = e.target.files[0]; if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                try {
+                    let importedTransaction;
+                    if (file.name.endsWith('.json')) {
+                        importedTransaction = JSON.parse(event.target.result);
+                    } else { // Excel
+                        const data = new Uint8Array(event.target.result);
+                        const workbook = XLSX.read(data, {type: 'array'});
+                        const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+                        const json = XLSX.utils.sheet_to_json(worksheet);
+                        const firstRow = json[0];
+                        if (!firstRow || !firstRow.ID || !firstRow.ClientName || !firstRow.PropertyAddress || !firstRow.Type) throw new Error("Excel file is missing required columns: ID, ClientName, PropertyAddress, Type");
+                        const checklistState = {};
+                        json.forEach(row => { if (row.TaskID && typeof row.Completed === 'boolean') { checklistState[row.TaskID] = row.Completed; } });
+                        importedTransaction = { id: firstRow.ID, clientName: firstRow.ClientName, propertyAddress: firstRow.PropertyAddress, type: firstRow.Type, checklistState: checklistState };
+                    }
+                    
+                    if (importedTransaction.transactions && Array.isArray(importedTransaction.transactions)) throw new Error("This is a full backup file. Please use the 'Import Full Backup' button.");
+                    if (!importedTransaction.id || !importedTransaction.clientName || !importedTransaction.type || importedTransaction.checklistState === undefined) throw new Error("Invalid single transaction file format.");
+
+                    const existingIndex = transactions.findIndex(t => t.id === importedTransaction.id);
+                    if (existingIndex > -1) {
+                        showConfirmModal('Overwrite Transaction?', `A transaction for "${importedTransaction.clientName}" already exists. Do you want to overwrite it?`, () => {
+                            transactions[existingIndex] = importedTransaction;
+                            switchTransaction(importedTransaction.id);
+                        });
+                    } else {
+                        transactions.push(importedTransaction);
+                        switchTransaction(importedTransaction.id);
+                        alert(`Transaction for "${importedTransaction.clientName}" was added successfully!`);
+                    }
+                } catch (error) {
+                    alert('Error: Could not import transaction. ' + error.message);
+                    console.error(error);
+                } finally {
+                    importFileInput.value = '';
+                }
+            };
+            if(file.name.endsWith('.json')) reader.readAsText(file);
+            else reader.readAsArrayBuffer(file);
+        };
+        importFileInput.click();
+    }
+
+    function deleteTransaction(id) {
+        const transaction = transactions.find(t => t.id === id);
+        showConfirmModal(
+            `Delete Transaction?`, 
+            `Are you sure you want to delete the transaction for "${transaction.clientName}"? This cannot be undone.`,
+            () => {
+                const indexToDelete = transactions.findIndex(t => t.id === id);
+                transactions.splice(indexToDelete, 1);
+
+                if (activeTransactionId === id) {
+                    if (transactions.length > 0) {
+                        const newIndex = Math.max(0, indexToDelete - 1);
+                        activeTransactionId = transactions[newIndex].id;
+                    } else {
+                        activeTransactionId = null;
+                    }
+                }
+                saveState();
+                renderUI();
+            }
+        );
+    }
+    
+    function exportIndividualTransaction(id, format) {
+        saveState();
+        const transaction = transactions.find(t => t.id === id);
+        const filename = `${transaction.clientName} - ${transaction.propertyAddress}`.replace(/[\/\\?%*:|"<>]/g, '_');
+        
+        if (format === 'json') {
+            const blob = new Blob([JSON.stringify(transaction, null, 2)], { type: 'application/json' });
+            downloadFile(blob, `${filename}.json`);
+        } else if (format === 'excel') {
+            const data = [];
+            const template = checklistTemplates[transaction.type];
+            for (const sectionId in template) {
+                 template[sectionId].tasks.forEach(task => {
+                     if (task.type !== 'category') {
+                         data.push({
+                             ID: transaction.id, ClientName: transaction.clientName, PropertyAddress: transaction.propertyAddress, Type: transaction.type, Phase: template[sectionId].title, Task: task.text, TaskID: task.id, Completed: transaction.checklistState[task.id] || false
+                         });
+                     }
+                 });
+             }
+             const worksheet = XLSX.utils.json_to_sheet(data);
+             const workbook = XLSX.utils.book_new();
+             XLSX.utils.book_append_sheet(workbook, worksheet, "Checklist");
+             XLSX.writeFile(workbook, `${filename}.xlsx`);
+        }
+    }
+
+    function handleExportFullBackup() {
+        saveState();
+        const blob = new Blob([JSON.stringify({ transactions, activeTransactionId }, null, 2)], { type: 'application/json' });
+        downloadFile(blob, `kens_master_checklist_FULL_BACKUP_${new Date().toISOString().split('T')[0]}.json`);
+    }
+
+    function handleImportFullBackup() {
+        showConfirmModal(
+            'Overwrite All Data?',
+            'WARNING: This will overwrite ALL current transactions. This is for disaster recovery only. Are you sure?',
+            () => {
+                 importFileInput.onchange = (e) => {
+                     const file = e.target.files[0];
+                    if (!file || !file.name.endsWith('.json')) return;
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                        try {
+                            const importedState = JSON.parse(event.target.result);
+                            if (importedState.id && importedState.clientName && importedState.type) throw new Error("This is a single transaction file. Use the 'Add Archived Transaction' button.");
+                            if (!importedState.transactions || importedState.activeTransactionId === undefined) throw new Error("This is not a valid full backup file.");
+                            loadState(importedState);
+                            alert('Full backup restored successfully!');
+                        } catch(error) {
+                            alert('Error restoring backup: ' + error.message);
+                        } finally { importFileInput.value = ''; }
+                    };
+                    reader.readAsText(file);
+                };
+                importFileInput.accept = ".json";
+                importFileInput.click();
+            }
+        );
+    }
+
+    function downloadFile(blob, filename) {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
+    
+    // --- CHART & PROGRESS ---
+    function updateProgress() {
+        const activeTransaction = transactions.find(t => t.id === activeTransactionId);
+        if (!activeTransaction) {
+            updateOverallChart(0, 1);
+            return;
+        }
+        
+        let totalTasks = 0;
+        let completedTasks = 0;
+        const template = checklistTemplates[activeTransaction.type];
+
+        for (const sectionId in template) {
+            const sectionDiv = document.getElementById(sectionId);
+            if (!sectionDiv) continue;
+
+            const sectionTasks = Array.from(template[sectionId].tasks).filter(t => t.type !== 'category');
+            const sectionTotal = sectionTasks.length;
+            const sectionCompleted = sectionTasks.filter(t => activeTransaction.checklistState[t.id]).length;
+            
+            totalTasks += sectionTotal;
+            completedTasks += sectionCompleted;
+
+            const percentage = sectionTotal > 0 ? (sectionCompleted / sectionTotal) * 100 : 0;
+            const progressBar = document.getElementById(`${sectionId}-progress`);
+            if (progressBar) progressBar.style.width = `${percentage}%`;
+        }
+        updateOverallChart(completedTasks, totalTasks - completedTasks);
+    }
+
+    function updateOverallChart(completed, todo) {
+        const ctx = document.getElementById('overallProgressChart').getContext('2d');
+        const data = { labels: ['Completed', 'To-Do'], datasets: [{ data: [completed, todo], backgroundColor: ['rgba(16, 185, 129, 0.8)', 'rgba(226, 232, 240, 0.8)'], borderColor: ['#10b981', '#e2e8f0'], borderWidth: 1 }] };
+        if (chart) { chart.data = data; chart.update(); } 
+        else { chart = new Chart(ctx, { type: 'doughnut', data: data, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top' }, title: { display: true, text: 'Active Transaction Progress', font: { size: 18, weight: '600' }, color: getCssVariable('--primary-text') } }, cutout: '60%' } }); }
+    }
+    
+    function getCssVariable(variable) {
+        return getComputedStyle(document.documentElement).getPropertyValue(variable).trim();
+    }
+    
+    // --- INITIAL LOAD ---
+    setupListeners();
+    loadState();
+});
+
+</script>
+</body>
+</html>
