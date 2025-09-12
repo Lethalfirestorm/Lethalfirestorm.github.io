@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI-Powered CMA Generator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Library to read .docx files -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.7.1/mammoth.browser.min.js"></script>
+    <!-- Library to convert Markdown to HTML for beautiful output -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/showdown/2.1.0/showdown.min.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .custom-file-upload {
+            border: 2px dashed #cbd5e1;
+            padding: 1.5rem;
+            text-align: center;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .custom-file-upload:hover {
+            background-color: #f8fafc;
+        }
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        /* Styles for the generated report view */
+        #output-content h2 {
+            font-size: 1.5em;
+            font-weight: bold;
+            margin-top: 1rem;
+            margin-bottom: 0.5rem;
+            border-bottom: 1px solid #e2e8f0;
+            padding-bottom: 0.25rem;
+        }
+        #output-content h4 {
+            font-size: 1.1em;
+            font-weight: bold;
+            margin-top: 1rem;
+        }
+        #output-content table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+        #output-content th, #output-content td {
+            border: 1px solid #e2e8f0;
+            padding: 0.5rem;
+            text-align: left;
+        }
+        #output-content th {
+            background-color: #f8fafc;
+        }
+        /* Styles for the printable report overlay */
+        #print-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            z-index: 10000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        #print-container {
+            width: 8.5in;
+            height: 11in;
+            background: white;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+            overflow-y: auto;
+            padding: 1in;
+            position: relative;
+        }
+        #print-controls {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            display: flex;
+            gap: 10px;
+        }
+        .print-button {
+            padding: 8px 16px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .print-button.close {
+            background-color: #6c757d;
+        }
+        .page-break {
+            page-break-before: always;
+        }
+        @media print {
+            body * { visibility: hidden; }
+            #print-container, #print-container * { visibility: visible; }
+            #print-container { position: absolute; left: 0; top: 0; margin: 0; padding: 0; border: none; }
+            #print-controls { display: none !important; }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800">
+
+    <div id="main-app" class="container mx-auto p-4 md:p-8">
+        <header class="text-center mb-8">
+            <h1 class="text-4xl font-bold text-gray-900">AI-Powered CMA Generator</h1>
+            <p class="text-gray-600 mt-2">A two-step tool to generate a CMA and a persuasive pricing script.</p>
+        </header>
+
+        <div class="bg-white p-6 rounded-2xl shadow-lg">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <!-- Input Section -->
+                <div class="border-r border-gray-200 pr-8">
+                    <h2 class="text-2xl font-semibold mb-4">1. Input Property Data</h2>
+
+                    <div class="mb-6">
+                        <label for="subjectAddress" class="block font-medium mb-2">Subject Property Address</label>
+                        <input type="text" id="subjectAddress" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="e.g., 123 Beddoe Avenue, Hamilton, ON">
+                    </div>
+
+                    <div class="mb-6">
+                        <label for="subjectDetails" class="block font-medium mb-2">Subject Property Details (Brain Dump)</label>
+                        <textarea id="subjectDetails" rows="5" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="e.g., 3 beds, 2 baths, 1500 sq ft. Updated kitchen with granite countertops and stainless steel appliances..."></textarea>
+                    </div>
+
+                    <div class="mb-6">
+                        <label class="block font-medium mb-2">Comparable Listings (PDF, DOCX)</label>
+                        <div id="comps-upload-area" class="custom-file-upload rounded-lg">
+                            <p>Click or drag to upload all comps (Sold, Active, etc.)</p>
+                            <input type="file" id="comps-files" class="hidden" multiple accept=".pdf,.docx">
+                            <p id="comps-file-list" class="text-sm text-gray-500 mt-2"></p>
+                        </div>
+                    </div>
+
+                    <div class="mb-6">
+                        <label for="marketNotes" class="block font-medium mb-2">Current Market Notes (Optional)</label>
+                        <textarea id="marketNotes" rows="3" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="e.g., 4000 homes for sale, 300 buyers, 8% selling, 5 months inventory..."></textarea>
+                    </div>
+
+                    <button id="generate-btn" class="w-full bg-blue-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-blue-700 transition-colors text-lg">
+                        Generate CMA
+                    </button>
+                </div>
+
+                <!-- Output Section -->
+                <div>
+                    <h2 class="text-2xl font-semibold mb-4 flex justify-between items-center">
+                        2. Generated Report
+                        <div id="action-buttons" class="space-x-2">
+                           <button id="generate-script-btn" class="hidden bg-purple-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-purple-700 text-sm">Generate Script</button>
+                           <button id="format-report-btn" class="hidden bg-teal-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-teal-700 text-sm">Printable Report</button>
+                            <button id="copy-btn" class="hidden bg-gray-200 text-gray-700 font-bold py-2 px-4 rounded-lg hover:bg-gray-300 text-sm">Copy</button>
+                            <button id="download-btn" class="hidden bg-green-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-700 text-sm">Download</button>
+                        </div>
+                    </h2>
+                    <div id="output-container" class="border rounded-lg p-6 h-[600px] overflow-y-auto bg-gray-50">
+                        <div id="placeholder" class="text-center text-gray-500 flex flex-col items-center justify-center h-full">
+                            <svg class="w-12 h-12 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                            <p>Your generated CMA report will appear here.</p>
+                        </div>
+                        <div id="loader" class="hidden items-center justify-center h-full flex-col">
+                            <div class="loader"></div>
+                            <p id="loader-text" class="mt-4 text-gray-600">Analyzing data and generating report...</p>
+                        </div>
+                        <div id="output-content"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const showdownConverter = new showdown.Converter({ tables: true });
+
+        // --- HARDCODE YOUR API KEY HERE ---
+        const apiKey = 'AIzaSyD_UWXt1n74XpsmjUWHYZJwIyBngsbijg4';
+
+        // --- DOM Element References ---
+        const compsUploadArea = document.getElementById('comps-upload-area');
+        const compsFilesInput = document.getElementById('comps-files');
+        const compsFileList = document.getElementById('comps-file-list');
+        const generateBtn = document.getElementById('generate-btn');
+        const generateScriptBtn = document.getElementById('generate-script-btn');
+        const copyBtn = document.getElementById('copy-btn');
+        const downloadBtn = document.getElementById('download-btn');
+        const formatReportBtn = document.getElementById('format-report-btn');
+        const placeholder = document.getElementById('placeholder');
+        const loader = document.getElementById('loader');
+        const loaderText = document.getElementById('loader-text');
+        const outputContent = document.getElementById('output-content');
+        let rawMarkdownOutput = '';
+
+        // --- File Upload Logic ---
+        compsUploadArea.addEventListener('click', () => compsFilesInput.click());
+        compsUploadArea.addEventListener('dragover', (e) => e.preventDefault());
+        compsUploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            compsFilesInput.files = e.dataTransfer.files;
+            updateFileList(compsFilesInput);
+        });
+        compsFilesInput.addEventListener('change', () => updateFileList(compsFilesInput));
+
+        function updateFileList(input) {
+            compsFileList.innerHTML = Array.from(input.files).map(f => f.name).join('<br>');
+        }
+        
+        async function callGeminiAPIWithRetry(prompt, parts = [], retries = 4, delay = 2000) {
+            const model = "gemini-1.5-flash-latest"; 
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+            
+            const requestPayload = {
+                contents: [{ parts: [{ text: prompt }, ...parts] }],
+                generationConfig: { 
+                    temperature: 0.3,
+                    responseMimeType: "text/plain"
+                }
+            };
+
+            for (let i = 0; i < retries; i++) {
+                try {
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(requestPayload)
+                    });
+
+                    if (response.ok) {
+                        const data = await response.json();
+                        if (data.candidates && data.candidates.length > 0 && data.candidates[0].content && data.candidates[0].content.parts) {
+                            return data.candidates[0].content.parts[0].text;
+                        } else {
+                           throw new Error("Invalid response structure from API.");
+                        }
+                    }
+                    
+                    if (response.status === 429 || response.status >= 500) {
+                        console.warn(`API is overloaded. Retrying in ${delay / 1000}s... (Attempt ${i + 1}/${retries})`);
+                        loaderText.textContent = `Server is busy. Retrying... (Attempt ${i + 1})`;
+                        await new Promise(resolve => setTimeout(resolve, delay));
+                        delay *= 2; 
+                    } else {
+                        const errorData = await response.json();
+                        throw new Error(`API Error (${response.status}): ${errorData.error.message}`);
+                    }
+                } catch (error) {
+                   if (i === retries - 1) throw error;
+                   console.warn(`Network error. Retrying in ${delay / 1000}s...`);
+                   loaderText.textContent = `Network error. Retrying...`;
+                   await new Promise(resolve => setTimeout(resolve, delay));
+                   delay *= 2;
+                }
+            }
+            throw new Error('API failed to respond after multiple retries.');
+        }
+
+
+        // --- Main Application Logic ---
+        generateBtn.addEventListener('click', async () => {
+            const subjectAddress = document.getElementById('subjectAddress').value.trim();
+            const subjectDetails = document.getElementById('subjectDetails').value.trim();
+            const marketNotes = document.getElementById('marketNotes').value.trim();
+
+            if (apiKey === 'YOUR_API_KEY_HERE') {
+                alert('Please hardcode your API key in the HTML file first.');
+                return;
+            }
+            if (!subjectAddress || !subjectDetails || compsFilesInput.files.length === 0) {
+                alert('Please provide a subject address, subject details, and at least one comparable listings file.');
+                return;
+            }
+
+            placeholder.style.display = 'none';
+            outputContent.innerHTML = '';
+            loaderText.textContent = 'Analyzing data and generating report...';
+            loader.style.display = 'flex';
+            [copyBtn, downloadBtn, generateScriptBtn, formatReportBtn].forEach(btn => btn.classList.add('hidden'));
+
+            try {
+                const apiParts = await Promise.all(Array.from(compsFilesInput.files).map(fileToGenerativePart));
+                const cmaPrompt = buildCmaPrompt(subjectAddress, subjectDetails, marketNotes);
+                rawMarkdownOutput = await callGeminiAPIWithRetry(cmaPrompt, apiParts);
+                
+                const htmlOutput = showdownConverter.makeHtml(rawMarkdownOutput);
+                outputContent.innerHTML = htmlOutput;
+
+                [copyBtn, downloadBtn, generateScriptBtn, formatReportBtn].forEach(btn => btn.classList.remove('hidden'));
+            } catch (error) {
+                outputContent.innerHTML = `<p class="text-red-500"><strong>Error:</strong> ${error.message}</p>`;
+            } finally {
+                loader.style.display = 'none';
+            }
+        });
+        
+        generateScriptBtn.addEventListener('click', async () => {
+             const marketNotes = document.getElementById('marketNotes').value.trim();
+             generateScriptBtn.textContent = 'Generating...';
+             generateScriptBtn.disabled = true;
+
+             try {
+                const scriptPrompt = buildScriptPrompt(rawMarkdownOutput, marketNotes);
+                const scriptMarkdown = await callGeminiAPIWithRetry(scriptPrompt); 
+
+                rawMarkdownOutput += "\n\n" + scriptMarkdown; // Append to full report
+                const scriptHtml = showdownConverter.makeHtml(scriptMarkdown);
+                outputContent.innerHTML += scriptHtml; // Append to visible output
+                
+                generateScriptBtn.classList.add('hidden'); // Hide after successful generation
+             } catch (error) {
+                outputContent.innerHTML += `<p class="text-red-500"><strong>Error generating script:</strong> ${error.message}</p>`;
+             } finally {
+                generateScriptBtn.textContent = 'Generate Pricing Script';
+                generateScriptBtn.disabled = false;
+             }
+        });
+
+        formatReportBtn.addEventListener('click', () => {
+            const printableHtml = generatePrintableHtml(rawMarkdownOutput);
+            const newWindow = window.open();
+            newWindow.document.write(printableHtml);
+            newWindow.document.close();
+        });
+
+
+        // --- Helper Functions ---
+        function fileToGenerativePart(file) {
+            return new Promise((resolve, reject) => {
+                if (file.type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document") {
+                    const reader = new FileReader();
+                    reader.onload = function(event) {
+                        mammoth.extractRawText({ arrayBuffer: event.target.result })
+                            .then(result => {
+                                const textContent = `\n\n--- DOCUMENT START: ${file.name} ---\n${result.value}\n--- DOCUMENT END: ${file.name} ---\n\n`;
+                                resolve({ text: textContent });
+                            }).catch(reject);
+                    };
+                    reader.onerror = reject;
+                    reader.readAsArrayBuffer(file);
+                } else if (file.type === 'application/pdf') {
+                    const reader = new FileReader();
+                    reader.onload = () => {
+                        resolve({ inlineData: { mimeType: 'application/pdf', data: reader.result.split(',')[1] }});
+                    };
+                    reader.onerror = reject;
+                    reader.readAsDataURL(file);
+                } else {
+                    reject(new Error('Unsupported file type: ' + file.name));
+                }
+            });
+        }
+        
+        function buildCmaPrompt(subjectAddress, subjectDetails, marketNotes) {
+            return `
+                **ROLE:** You are an expert real estate analyst preparing a Comparative Market Analysis (CMA).
+                **CONTEXT:** The subject property is **${subjectAddress}** with these details: "${subjectDetails}". I have provided comparable listings as file uploads or extracted text. Additional market notes are: "${marketNotes || 'None provided.'}"
+                **TASK:** Follow these steps precisely:
+                1.  Analyze all provided documents and extracted text to identify and extract key data for each property (status, price, beds, baths, sqft, etc.).
+                2.  Select the 3 best "Sold" and 3 best "Active" comparables from the data.
+                3.  Generate a "Neighborhood Profile & Market Insights" section for the area based on your knowledge of the city/region mentioned in the address.
+                4.  Create a "CMA Adjustment Grid" in a Markdown table, using the subject property as the baseline. Make logical, dollar-value adjustments. The table must have a header row and each subsequent row must represent a comparable property. The final column must be the 'Adjusted Price'.
+                5.  Provide a "Price Recommendation" with a tight price range and a concise justification based on all data.
+                6.  Format the ENTIRE output as a professional report using Markdown. Do NOT include the pricing script yet.
+            `;
+        }
+        
+        function buildScriptPrompt(cmaReport, marketNotes) {
+            return `
+                **ROLE:** You are an expert real estate sales strategist and copywriter.
+                **CONTEXT:** You have been provided with a completed CMA report below. You have also been given critical market statistics in the user's notes.
+                CMA REPORT:
+                "${cmaReport}"
+                CRITICAL MARKET NOTES FROM REALTOR:
+                "${marketNotes || 'Crucial market stats were not provided.'}"
+                **TASK:**
+                Generate a "Pricing Conversation Script" for a realtor to use with a homeowner. The script MUST be:
+                -   **Conversational and Easy to Understand:** Avoid jargon.
+                -   **Persuasive:** Use narrative and metaphorical selling techniques as described. It's about leading the seller on a journey of understanding.
+                -   **Use Analogies & Stories:** Create a visual, like the "fishing" analogy or the "10 offers vs. zero offers" example.
+                -   **Incorporate Market Statistics:** Directly weave in the numbers from the "CRITICAL MARKET NOTES" to create urgency and justify the pricing strategy. For example, if notes say "4000 homes for sale, 300 buyers, 8% selling," you must use those numbers.
+                -   **Create a Vision of Success:** Contrast the outcome of a well-priced vs. overpriced home.
+                -   **Format the output** using Markdown with a clear heading.
+            `;
+        }
+        
+        function generatePrintableHtml(markdownContent) {
+            const subjectAddress = document.getElementById('subjectAddress').value.trim();
+            const htmlContent = showdownConverter.makeHtml(markdownContent);
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = htmlContent;
+
+            // --- Chart Generation Logic ---
+            let chartHtml = '';
+            try {
+                const table = tempDiv.querySelector('table');
+                if (table) {
+                    const headers = Array.from(table.querySelectorAll('thead th')).map(th => th.textContent.trim());
+                    const priceIndex = headers.findIndex(h => h.toLowerCase().includes('price'));
+                    const addressIndex = headers.findIndex(h => h.toLowerCase().includes('address') || h.toLowerCase().includes('property'));
+                    
+                    if (priceIndex !== -1 && addressIndex !== -1) {
+                        const rows = Array.from(table.querySelectorAll('tbody tr'));
+                        const chartData = rows.map(row => {
+                            const cells = row.querySelectorAll('td');
+                            const priceText = cells[priceIndex].textContent.trim().replace(/[^0-9.-]+/g,"");
+                            return {
+                                label: cells[addressIndex].textContent.trim().split(',')[0], // Get just the street part
+                                value: parseFloat(priceText) || 0
+                            };
+                        }).filter(d => d.value > 0);
+
+                        const maxValue = Math.max(...chartData.map(d => d.value));
+                        
+                        chartHtml = `<div style="padding: 20px; border: 1px solid #eee; border-radius: 8px; margin-top: 20px;">
+                            <h3 style="font-size: 1.25rem; font-weight: bold; margin-bottom: 15px;">Adjusted Price Comparison</h3>
+                            <div style="display: flex; flex-direction: column; gap: 10px;">
+                                ${chartData.map(item => `
+                                    <div style="display: flex; align-items: center; margin-bottom: 5px;">
+                                        <div style="width: 120px; font-size: 0.9em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${item.label}</div>
+                                        <div style="flex-grow: 1; background-color: #f0f0f0; border-radius: 5px; margin-left: 10px;">
+                                            <div style="width: ${(item.value / maxValue) * 100}%; background-color: #3b82f6; color: white; text-align: right; padding: 4px 8px; border-radius: 5px; white-space: nowrap;">
+                                                $${item.value.toLocaleString()}
+                                            </div>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>`;
+                    }
+                }
+            } catch (e) {
+                console.error("Chart generation failed:", e);
+                chartHtml = '<p>Could not generate chart from table data.</p>';
+            }
+            
+            // Find where to insert the chart
+            const adjustmentGridHeader = Array.from(tempDiv.querySelectorAll('h2, h3, h4')).find(h => h.textContent.toLowerCase().includes('adjustment grid'));
+            if (adjustmentGridHeader) {
+                adjustmentGridHeader.insertAdjacentHTML('afterend', chartHtml);
+            }
+            
+            const finalHtml = tempDiv.innerHTML;
+            
+            // --- Printable Page Template ---
+            return `
+                <html>
+                <head>
+                    <title>CMA for ${subjectAddress}</title>
+                    <style>
+                        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; line-height: 1.6; color: #333; }
+                        .page { padding: 40px; }
+                        h1, h2, h3, h4 { color: #111; }
+                        h1 { font-size: 28px; border-bottom: 2px solid #333; padding-bottom: 10px; margin-bottom: 20px; }
+                        h2 { font-size: 22px; border-bottom: 1px solid #ccc; padding-bottom: 8px; margin-top: 25px; }
+                        table { width: 100%; border-collapse: collapse; margin-top: 1rem; font-size: 12px; }
+                        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+                        th { background-color: #f2f2f2; }
+                        .script-page { page-break-before: always; }
+                        @media print {
+                           #print-controls { display: none; }
+                           body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+                        }
+                    </style>
+                </head>
+                <body>
+                    <div id="print-controls" style="position: fixed; top: 15px; right: 20px; z-index: 100; display: flex; gap: 10px;">
+                        <button onclick="window.print()" style="padding: 8px 16px; background-color: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer;">Print / Save PDF</button>
+                    </div>
+                    <div class="page">${finalHtml.replace('<h2>Pricing Conversation Script</h2>', '<h2 class="script-page">Pricing Conversation Script</h2>')}</div>
+                </body>
+                </html>
+            `;
+        }
+
+        // --- Button Event Listeners for Copy and Download ---
+        copyBtn.addEventListener('click', () => {
+            navigator.clipboard.writeText(rawMarkdownOutput).then(() => {
+                alert('Report copied to clipboard!');
+            }, () => {
+                alert('Failed to copy report.');
+            });
+        });
+
+        downloadBtn.addEventListener('click', () => {
+            const subjectAddress = document.getElementById('subjectAddress').value.trim().replace(/[^a-zA-Z0-9]/g, '-') || 'CMA-Report';
+            const filename = `CMA-Report-${subjectAddress}.md`;
+            const blob = new Blob([rawMarkdownOutput], { type: 'text/markdown' });
+            
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(a.href);
+        });
+
+    </script>
+</body>
+</html>
+
